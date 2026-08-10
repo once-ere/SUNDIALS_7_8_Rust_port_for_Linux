@@ -20,34 +20,24 @@ every claim above. See "Open items" for what a bare-metal re-run would add.
 Raw artefacts for all of it are committed under
 [`evidence/linux-x86_64-glibc239/`](evidence/linux-x86_64-glibc239/).
 
-> ### Not yet pushed
+> ### Published
 >
-> `git push origin main` to
-> `https://github.com/once-ere/SUNDIALS_7_8_Rust_port_for_Linux.git`
-> **failed: GitHub asked for interactive authentication** that this session
-> could not supply. The work is committed locally on `main` with `origin`
-> already configured; nothing else is outstanding.
+> `main` is on
+> `https://github.com/once-ere/SUNDIALS_7_8_Rust_port_for_Linux.git`.
+> All work lands directly on `main`; there is no feature branch and no
+> pull request to review, because the branch *is* the deliverable.
 >
-> What was tried, so the fix is not re-guessed:
->
-> * `credential.helper` is globally set to **`manager-core`**, a name Git
->   Credential Manager retired; no such binary exists on this machine. The
->   installed one is `C:\Program Files\Git\mingw64\bin\git-credential-manager.exe`.
-> * Overriding it per-invocation (`-c credential.helper= -c
->   credential.helper=manager`) got GCM to run, but it would not serve the
->   stored `git:https://github.com` credential without a prompt.
-> * There is an SSH key at `~/.ssh/id_ed25519` inside the WSL Ubuntu guest,
->   but GitHub rejects it — `Permission denied (publickey)`. It is not
->   registered on the account.
->
-> Either route works once a human is at the keyboard:
+> Note for whoever automates this next: an agent session cannot push from
+> here unattended. `credential.helper` is globally set to **`manager-core`**,
+> a name Git Credential Manager retired — no such binary exists on this
+> machine (the installed one is
+> `C:\Program Files\Git\mingw64\bin\git-credential-manager.exe`), and GCM
+> will not release the stored `git:https://github.com` credential without a
+> prompt. The SSH key at `~/.ssh/id_ed25519` in the WSL Ubuntu guest is not
+> registered on the account (`Permission denied (publickey)`). Fix with:
 >
 > ```bash
 > git config --global credential.helper manager
-> ```
->
-> ```bash
-> git -C "C:/Users/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux" push -u origin main
 > ```
 
 ---
