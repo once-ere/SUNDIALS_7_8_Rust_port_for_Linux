@@ -32,6 +32,16 @@ case "${1:-build}" in
   gate)  tools/verify_examples.sh all > logs/gate-run.log 2>&1
          echo "gate exit: $?"; tail -4 logs/summary.txt ;;
   pow)   tools/pow_differential.sh all ;;
+  # Copy the run artefacts back into the Windows working copy under
+  # evidence/, where they are tracked (logs/ itself is gitignored).
+  evidence)
+         D="$WIN_REPO/evidence/linux-x86_64-glibc239"
+         mkdir -p "$D"
+         cp logs/summary.txt logs/pow_differential.log "$D"/
+         tools/classify_diffs.sh > "$D/classify_diffs.txt" 2>&1
+         { uname -srm; ldd --version | head -1; gcc --version | head -1
+           rustc -V; grep -m1 'model name' /proc/cpuinfo; } > "$D/host.txt"
+         ls -l "$D" ;;
   sync)  echo "synced only" ;;
   *)     "$@" ;;
 esac

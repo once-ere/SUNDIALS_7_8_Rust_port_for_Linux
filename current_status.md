@@ -17,6 +17,27 @@ Measured host: Ubuntu 24.04 x86-64, glibc 2.39, gcc 13.3.0, rustc/cargo
 genuine Linux/glibc/x86-64 userspace and therefore a valid target for
 every claim above. See "Open items" for what a bare-metal re-run would add.
 
+Raw artefacts for all of it are committed under
+[`evidence/linux-x86_64-glibc239/`](evidence/linux-x86_64-glibc239/).
+
+> ### Not yet pushed
+>
+> `git push origin main` to
+> `https://github.com/once-ere/SUNDIALS_7_8_Rust_port_for_Linux.git`
+> **failed: GitHub asked for interactive authentication** that this session
+> could not supply (Git Credential Manager is configured as the deprecated
+> helper name `manager-core`, whose binary is absent; the present binary is
+> `git-credential-manager.exe`, and it would not serve the stored credential
+> non-interactively). The work is committed locally on `main` with `origin`
+> already configured. To publish:
+>
+> ```bash
+> git config --global credential.helper manager   # fix the stale helper name
+> git push -u origin main
+> ```
+>
+> Nothing else is outstanding for the push.
+
 ---
 
 ## 1. What this project is
