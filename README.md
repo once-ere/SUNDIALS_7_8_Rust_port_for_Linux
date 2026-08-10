@@ -119,18 +119,38 @@ and the draws are output-observable. See [`NOTICE`](NOTICE).
 | excluded (KLU/SuperLU) | 20 | 20 |
 | port defects | 0 | **0** |
 
-The 26 remaining divergences split into two groups, both reference-side:
+**"0 port defects" is measured, not asserted.** A divergence from a shipped
+`.out` is a port defect only if the Rust output also differs from what the
+pristine upstream C produces on the same machine — so the upstream C library
+and its serial examples were built here with cmake + gcc 13.3.0
+([`tools/pristine_c_build.sh`](tools/pristine_c_build.sh)) and every
+divergent variant run three ways
+([`tools/compare_pristine_c.sh`](tools/compare_pristine_c.sh)):
 
-* **15 are whitespace-only.** `tr -s ' '` makes the diff empty — every
-  printed *value* is byte-identical and only column spacing differs, because
-  the shipped references predate the `SUN_TABLE_WIDTH` 28 → 29 change.
-  Re-proven on this host by [`tools/classify_diffs.sh`](tools/classify_diffs.sh).
-* **11 have content differences**, each root-caused in
-  [`VERIFICATION.md`](VERIFICATION.md): two LAPACK→native dense variants
-  (`cv[s]Roberts_dnsL`), two upstream `.out` anomalies (`cv[s]Pendulum_dns`),
-  five trailing-whitespace-stripped references (`cvsKrylovDemo_ls` ×4,
-  `idasAkzoNob_ASAi_dns`), and two references missing a final blank line the
-  source prints unconditionally.
+| comparison | result across all 26 |
+|---|---|
+| **Rust vs pristine C** | **`same` — 26 / 26** |
+| pristine C vs shipped `.out` | `DIFF` — 26 / 26 |
+| Rust vs shipped `.out` | `DIFF` — 26 / 26 (the gate result) |
+
+The C and the Rust agree with each other and disagree with the shipped
+reference, every time: the references are stale, the translation is not
+wrong anywhere. The two LAPACK examples are absent from a pristine
+`ENABLE_LAPACK=OFF` build, so
+[`tools/compare_lapack_substituted.sh`](tools/compare_lapack_substituted.sh)
+compiles them with exactly the two tokens the port also substitutes; both
+also come out `same`.
+
+Secondarily, [`tools/classify_diffs.sh`](tools/classify_diffs.sh) shows
+**15 of the 26 are whitespace-only** — `tr -s ' '` makes the diff empty, so
+every printed *value* is byte-identical and only column spacing differs
+(references predating the `SUN_TABLE_WIDTH` 28 → 29 change). The other 11
+have real content differences, all reference-side and each root-caused in
+[`VERIFICATION.md`](VERIFICATION.md): two LAPACK→native dense variants
+(`cv[s]Roberts_dnsL`), two upstream `.out` anomalies (`cv[s]Pendulum_dns`),
+five trailing-whitespace-stripped references (`cvsKrylovDemo_ls` ×4,
+`idasAkzoNob_ASAi_dns`), and two references missing a final blank line the
+source prints unconditionally.
 
 ## Distribution coverage
 

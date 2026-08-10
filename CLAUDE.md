@@ -98,7 +98,17 @@ CLI-option variants use bare `<solverid>.<key>` tokens (no leading
 dashes); the parser prefix-matches literally.
 
 Current Linux/x86-64 gate: **153 IDENTICAL / 26 reference-side / 20
-excluded**, 0 port defects. `tools/classify_diffs.sh` is the second pass —
+excluded**, 0 port defects — where "0 port defects" is a measurement, not a
+judgement call: `tools/pristine_c_build.sh` builds the upstream C library
+and examples with cmake/gcc out of source, and `tools/compare_pristine_c.sh`
+(plus `tools/compare_lapack_substituted.sh` for the two `*L` examples) runs
+every divergent variant as Rust, as pristine C, and against the shipped
+reference. **A divergence is a port defect only when Rust != pristine C on
+the same host.** All 26 currently come out `same`. Re-run these three after
+any change that could move numeric output; never reclassify a variant from
+the reference alone.
+
+`tools/classify_diffs.sh` is the second pass —
 it re-diffs the non-IDENTICAL variants under `tr -s ' '` and `diff -w` so a
 whitespace-only divergence (stale `SUN_TABLE_WIDTH` 28 -> 29 references) can
 be told from a content one without opening 26 diffs. Never widen

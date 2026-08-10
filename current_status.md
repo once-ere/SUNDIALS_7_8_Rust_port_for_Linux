@@ -10,7 +10,7 @@ Session of 2026-08-10. Read this file first when resuming.
 | deterministic `pow` vs **native glibc `pow`**, SUNDIALS domain corpus | **5,900,000 inputs, 0 mismatches** |
 | deterministic `pow` vs **native glibc `pow`**, unrestricted corpus | **20,000,000 inputs, 0 mismatches** |
 | `tools/verify_examples.sh all` (199 reference variants) | **153 IDENTICAL / 26 reference-side divergences / 20 excluded (KLU/SuperLU)** |
-| port defects among the 26 | **0** |
+| port defects among the 26 | **0 — proven natively**: all 26 are byte-identical to the pristine upstream C built by gcc 13.3.0 on this host |
 
 Measured host: Ubuntu 24.04 x86-64, glibc 2.39, gcc 13.3.0, rustc/cargo
 1.93.1, CPU with FMA — running as a WSL2 guest on Windows 11, which is a
@@ -111,20 +111,45 @@ and `ln` from the host through `f64`'s unspecified-precision methods; on a
 glibc host that is glibc, so the mismatch the macOS port had to document
 away simply is not there.
 
-The 26 that remain split cleanly (`tools/classify_diffs.sh`, run on this
-host):
+The 26 that remain are **all reference-side, and that is now proven on
+this host rather than inherited.** A divergence from a shipped `.out` is a
+port defect only if the Rust output also differs from what the pristine
+upstream C produces on the same machine. So the upstream C library and its
+serial examples were built here with cmake + gcc 13.3.0
+(`tools/pristine_c_build.sh`, 112 example binaries) and every divergent
+variant was run three ways — Rust, pristine C, shipped reference — by
+`tools/compare_pristine_c.sh`:
 
-* **15 are whitespace-only** — `tr -s ' '` makes the diff empty, i.e.
-  every printed *value* is byte-identical and only column spacing differs
-  (`SUN_TABLE_WIDTH` 28 -> 29 in the shipped references). Proven here, on
-  this host, this session.
-* **11 have content differences**, each already root-caused in the
-  inherited `VERIFICATION.md` as reference-side: two LAPACK->native dense
-  variants (`cv[s]Roberts_dnsL`), two upstream `.out` anomalies
-  (`cv[s]Pendulum_dns`), five trailing-whitespace-stripped references
-  (`cvsKrylovDemo_ls` x4, `idasAkzoNob_ASAi_dns`), and two references
-  missing a final blank line the source prints unconditionally
-  (`ark_conserved_exp_entropy_ark 1 1`, `ark_dissipated_exp_entropy 1 1`).
+| comparison | result across all 26 |
+|---|---|
+| **Rust vs pristine C** | **`same` — 26 / 26** |
+| pristine C vs shipped `.out` | `DIFF` — 26 / 26 |
+| Rust vs shipped `.out` | `DIFF` — 26 / 26 (the gate result) |
+
+The C and the Rust agree with each other and disagree with the shipped
+reference, in every case. **The references are stale; the port is not
+wrong anywhere.**
+
+The two LAPACK examples needed one extra step, because a pristine build
+with `ENABLE_LAPACK=OFF` does not contain them at all.
+`tools/compare_lapack_substituted.sh` compiles `cv[s]Roberts_dnsL.c` with
+exactly the two tokens the port also substitutes
+(`sunlinsol_lapackdense.h` -> `sunlinsol_dense.h`, `SUNLinSol_LapackDense`
+-> `SUNLinSol_Dense`) against the pristine C library, and both come out
+`same` against the Rust. Their divergence from the reference is therefore
+entirely the documented LAPACK -> native substitution, not a translation
+error.
+
+Secondary classification, from `tools/classify_diffs.sh`: **15 of the 26
+are whitespace-only** — `tr -s ' '` makes the diff empty, so every printed
+*value* is byte-identical and only column spacing differs
+(`SUN_TABLE_WIDTH` 28 -> 29 in references that predate the change). The
+other 11 have real content differences, all reference-side: two
+LAPACK->native variants (`cv[s]Roberts_dnsL`), two upstream `.out`
+anomalies (`cv[s]Pendulum_dns`), five trailing-whitespace-stripped
+references (`cvsKrylovDemo_ls` x4, `idasAkzoNob_ASAi_dns`), and two
+references missing a final blank line the source prints unconditionally
+(`ark_conserved_exp_entropy_ark 1 1`, `ark_dissipated_exp_entropy 1 1`).
 
 ## 4. Why the claim extends to Debian, Arch and Fedora
 
@@ -151,14 +176,11 @@ Nothing blocks the port; these would strengthen the evidence.
    arithmetic cannot differ — but a run on a bare-metal Ubuntu box would
    remove the question. Re-run: `tools/pow_differential.sh all` and
    `tools/verify_examples.sh all`.
-2. **Native pristine-C rebuild for the 11 content divergences.** The macOS
-   project root-caused each against a pristine upstream C build made
-   *there*; this session re-verified the 15 whitespace ones natively but
-   carried the other 11 over on the strength of that earlier work. Build
-   upstream SUNDIALS 7.8.0 with cmake/gcc on Linux and re-confirm
-   "port == pristine C" for those 11. Expected to hold — several of them
-   are pure formatting facts about the shipped `.out` files, independent
-   of any host.
+2. ~~**Native pristine-C rebuild for the content divergences.**~~ **Done.**
+   Upstream SUNDIALS 7.8.0 was built here with cmake + gcc 13.3.0 and all
+   26 divergent variants compared three ways; Rust == pristine C in every
+   case (§3). `tools/pristine_c_build.sh`,
+   `tools/compare_pristine_c.sh`, `tools/compare_lapack_substituted.sh`.
 3. **glibc version sweep.** Measured against 2.39. A quick re-run of
    `tools/pow_differential.sh domain` under a Debian 12 (2.36) and a
    Fedora 41 (2.40) container would turn §4's argument into a measurement.
@@ -183,6 +205,15 @@ C tree as this workspace's **parent** directory, because it reads
 ```bash
 tools/verify_examples.sh all     # then read logs/summary.txt
 tools/classify_diffs.sh          # second pass over the non-IDENTICAL ones
+```
+
+To reproduce the port-defect proof, which needs a native C build of the
+upstream tree (out of source; the tree stays read-only):
+
+```bash
+tools/pristine_c_build.sh            # cmake + gcc, ~112 example binaries
+tools/compare_pristine_c.sh          # Rust vs pristine C vs reference
+tools/compare_lapack_substituted.sh  # the two *L examples
 ```
 
 From Windows, `tools/wsl_sync_build.sh {build|test|rel|gate|pow}` mirrors

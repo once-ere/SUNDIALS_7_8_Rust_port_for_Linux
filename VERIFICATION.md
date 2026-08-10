@@ -22,11 +22,39 @@ upstream `.out` files, and it is the central evidence for this port's
 platform claim. The 20 KLU/SuperLU exclusions are unchanged and are a scope
 decision, not a result.
 
-### The 26 remaining divergences — all reference-side
+### The 26 remaining divergences — all reference-side, proven natively
 
-Re-diffed on this host with `tools/classify_diffs.sh`, which compares each
-captured run against its reference three ways: exact, `tr -s ' '`
-(squeeze runs of spaces), and `diff -w`.
+A divergence from a shipped `.out` is a **port defect** only if the Rust
+output also differs from what the pristine upstream C produces on the same
+machine. That comparison was made here: the upstream C library and its
+serial examples were built with cmake + gcc 13.3.0
+(`tools/pristine_c_build.sh`, 112 example binaries, out of source — the
+upstream tree stays read-only), and every divergent variant was run three
+ways by `tools/compare_pristine_c.sh`.
+
+| comparison | result across all 26 variants |
+|---|---|
+| **Rust vs pristine C** | **`same` — 26 / 26** |
+| pristine C vs shipped `.out` | `DIFF` — 26 / 26 |
+| Rust vs shipped `.out` | `DIFF` — 26 / 26 (the gate result) |
+
+The C and the Rust agree with each other and disagree with the shipped
+reference, every time. **The references are stale; the translation is not
+wrong anywhere.** Raw table:
+[`evidence/linux-x86_64-glibc239/pristine_c_comparison.txt`](evidence/linux-x86_64-glibc239/pristine_c_comparison.txt).
+
+`cvRoberts_dnsL` and `cvsRoberts_dnsL` needed one extra step, because a
+pristine build with `ENABLE_LAPACK=OFF` does not contain them at all.
+`tools/compare_lapack_substituted.sh` compiles those two sources with
+exactly the two tokens the port also substitutes
+(`sunlinsol/sunlinsol_lapackdense.h` → `sunlinsol/sunlinsol_dense.h`,
+`SUNLinSol_LapackDense` → `SUNLinSol_Dense`) against the pristine C
+library; both come out `same` against the Rust. Their divergence from the
+reference is entirely the documented LAPACK → native substitution.
+
+The secondary classification below comes from `tools/classify_diffs.sh`,
+which compares each captured run against its reference three ways: exact,
+`tr -s ' '` (squeeze runs of spaces), and `diff -w`.
 
 **Group 1 — whitespace-only (15).** `tr -s ' '` makes the diff empty: every
 printed *value* is byte-identical and only column spacing differs, because
@@ -43,10 +71,9 @@ is proven arithmetic-free, on this host, this session.
 | `ark_reaction_diffusion_mri` | stale-ref(SUN_TABLE_WIDTH 28→29) |
 | `ark_kepler` — bare, `--stepper ERK --step-mode fixed --count-orbits`, `--stepper SPRK … --count-orbits --use-compensated-sums`, `… ARKODE_SPRK_EULER_1_1 …`, `… ARKODE_SPRK_RUTH_3_3 …` (5) | stale-ref(SUN_TABLE_WIDTH 28→29) |
 
-**Group 2 — content differences (11).** Each is root-caused in Part B as a
-reference-side defect, not a port defect. The classifications carry over
-because they are facts about the shipped `.out` files rather than about a
-libm — but see the caveat below.
+**Group 2 — content differences (11).** Each matches the pristine C
+byte-for-byte on this host (table above), so none is a port defect. The
+mechanism behind each shipped reference is root-caused in Part B.
 
 | variant(s) | class |
 |---|---|
@@ -56,15 +83,18 @@ libm — but see the caveat below.
 | `idasAkzoNob_ASAi_dns` | ref trailing-whitespace stripped |
 | `ark_conserved_exp_entropy_ark 1 1`, `ark_dissipated_exp_entropy 1 1` | reference lacks the final blank line the source prints unconditionally |
 
-> **Caveat, stated rather than buried.** Group 1 was re-proven natively in
-> this session. Group 2's root causes were established in the macOS project
-> against pristine upstream C binaries built *there*; this session did not
-> rebuild pristine C on Linux to re-confirm them. Most are pure formatting
-> facts about the reference files and cannot depend on the host, and the
-> `cvsKrylovDemo_ls` family's diagnosis (references requiring a *pre*-2.27
-> glibc) is consistent with still diverging under glibc 2.39. Re-confirming
-> all 11 against a native gcc/cmake build of SUNDIALS 7.8.0 is item 2 in
-> `current_status.md` §5 — expected to hold, not yet re-measured here.
+> **What is and is not claimed.** Both groups were re-measured natively
+> this session: Group 1 by whitespace-normalised re-diff, and all 26 by
+> the pristine-C comparison above. The *mechanism* attributed to each
+> reference in the Part B table (why a given `.out` is stale — a
+> `SUN_TABLE_WIDTH` change, a stripped trailing space, a pre-2.27 glibc
+> correctly-rounded `sin`) is the macOS project's diagnosis and is carried
+> over; what is proven here is the thing that matters for a port, namely
+> that the Rust and the C produce the same bytes. The
+> `cvsKrylovDemo_ls` family's diagnosis is independently consistent with
+> what happened here: those references require a *pre*-2.27 glibc, so they
+> still diverge under glibc 2.39 — and the pristine C diverges from them
+> in exactly the same way the Rust does.
 
 `ark_analytic_partitioned forcing` and the four `splitting` variants,
 `ark_kepler`, `kinRoboKin_dns` and the rest of Group 1 also demonstrate the

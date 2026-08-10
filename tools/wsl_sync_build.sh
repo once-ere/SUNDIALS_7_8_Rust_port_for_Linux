@@ -41,6 +41,8 @@ case "${1:-build}" in
          tools/classify_diffs.sh > "$D/classify_diffs.txt" 2>&1
          { uname -srm; ldd --version | head -1; gcc --version | head -1
            rustc -V; grep -m1 'model name' /proc/cpuinfo; } > "$D/host.txt"
+         tools/compare_pristine_c.sh        > "$D/pristine_c_comparison.txt" 2>&1
+         tools/compare_lapack_substituted.sh >> "$D/pristine_c_comparison.txt" 2>&1
          ls -l "$D" ;;
   sync)  echo "synced only" ;;
   *)     "$@" ;;
