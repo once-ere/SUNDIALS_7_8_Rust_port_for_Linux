@@ -43,6 +43,9 @@ case "${1:-build}" in
            rustc -V; grep -m1 'model name' /proc/cpuinfo; } > "$D/host.txt"
          tools/compare_pristine_c.sh        > "$D/pristine_c_comparison.txt" 2>&1
          tools/compare_lapack_substituted.sh >> "$D/pristine_c_comparison.txt" 2>&1
+         # Cross-distribution artefacts, if those sweeps have been run.
+         [ -f logs/glibc-sweep.txt ] && cp logs/glibc-sweep.txt "$D"/
+         for g in logs/gate-*.txt; do [ -e "$g" ] && cp "$g" "$D"/; done
          ls -l "$D" ;;
   sync)  echo "synced only" ;;
   *)     "$@" ;;

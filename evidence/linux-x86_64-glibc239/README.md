@@ -12,6 +12,8 @@ Raw artefacts from the verification run behind every claim in
 | `summary.txt` | `tools/verify_examples.sh all` | one line per reference variant: 153 IDENTICAL / 26 DIFF / 20 EXCLUDED |
 | `classify_diffs.txt` | `tools/classify_diffs.sh` | second pass over the non-IDENTICAL variants — `EXACT` / `SQUEEZE` (`tr -s ' '`) / `WS` (`diff -w`). A `SQUEEZE same` row means every printed value is byte-identical and only column spacing differs |
 | `pristine_c_comparison.txt` | `tools/compare_pristine_c.sh` + `tools/compare_lapack_substituted.sh` | the port-defect proof: each divergent variant run as Rust, as pristine upstream C (cmake + gcc 13.3.0), and against the shipped reference. **`RS_vs_C` is `same` on all 26 rows** — the port matches the C byte-for-byte and both differ from the stale reference |
+| `glibc-sweep.txt` | `tools/glibc_sweep.sh` | per-function libm fingerprints across Debian 12 / Ubuntu 24.04 / Fedora 41 / Debian 13 / Arch, plus Alpine (musl) as the negative control. This is what turned the distribution-coverage claim from an argument into a measurement — and corrected it |
+| `gate-<image>.txt` | `tools/gate_in_container.sh` | the full 199-variant gate re-run natively inside another distribution's container |
 
 Regenerate all four with `tools/wsl_sync_build.sh evidence` from Windows, or
 by running the three scripts directly on a Linux host with the upstream

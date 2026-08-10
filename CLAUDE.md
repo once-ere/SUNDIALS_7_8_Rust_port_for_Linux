@@ -13,10 +13,17 @@ Ubuntu 24.04 / glibc 2.39 / gcc 13.3.0 / rustc 1.93.1. The Rust sources are
 portable (`std` only, no `cfg(target_os)`/`cfg(target_arch)`) and build and
 unit-test anywhere, but every *numerical* claim — byte-identical output, the
 199-variant gate, each per-variant classification in `VERIFICATION.md`, and
-the `pow` differential — is a glibc-on-x86-64 result. It carries to the
-Debian, Arch and Fedora families on glibc >= 2.28 by the argument in
-`README.md` § "Distribution coverage"; it does **not** carry to musl, to
-arm64, or to Windows.
+the `pow` differential — is a glibc-on-x86-64 result.
+
+**Verified coverage is glibc 2.36 through 2.41** (Debian 12, Ubuntu 24.04,
+Debian 13, Fedora 41): the full gate was re-run natively in those
+containers and gives the identical 153 / 26 / 20 variant set. On **Arch
+(glibc 2.44) three more variants diverge** — `ark_analytic_lsrk_domeigest`
+(x2) and `ark_analytic_lsrk_varjac` — because 2.44 changed `sinh`, `cosh`
+and `acosh`, which the library calls from exactly one place,
+`arkode_lsrkstep.rs:87`. Do **not** widen the claim to "any glibc": that
+was asserted once, and `tools/glibc_sweep.sh` disproved it. It does not
+carry to musl, to arm64, or to Windows.
 
 Why this platform is the favourable one: the upstream reference `.out` files
 were generated on a glibc host, and `sin`, `cos`, `asin`, `acos`, `atan`,
@@ -114,6 +121,15 @@ whitespace-only divergence (stale `SUN_TABLE_WIDTH` 28 -> 29 references) can
 be told from a content one without opening 26 diffs. Never widen
 `noise_filter()` to swallow last-ulp drift, and never tune an example to
 match a reference.
+
+Cross-distribution tooling, for any change that could move numeric output
+or widen a platform claim: `tools/glibc_sweep.sh` fingerprints each
+distribution's libm function by function (FNV-1a over 1M inputs, via
+`tools/libm_probe.c`) — cheap, needs only a C compiler per container, and
+it *predicts* which variants are at risk. `tools/gate_in_container.sh
+<image>...` then runs the full gate natively inside those distributions to
+confirm whether the difference is output-observable. Never state a
+distribution claim these two have not been run for.
 
 `tools/pow_differential.sh [domain|random|all]` builds `tools/pow_oracle.c`
 with the host compiler and runs the two `pow_glibc_vs_native_oracle_*` tests

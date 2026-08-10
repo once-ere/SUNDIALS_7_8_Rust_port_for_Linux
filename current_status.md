@@ -25,18 +25,30 @@ Raw artefacts for all of it are committed under
 > `git push origin main` to
 > `https://github.com/once-ere/SUNDIALS_7_8_Rust_port_for_Linux.git`
 > **failed: GitHub asked for interactive authentication** that this session
-> could not supply (Git Credential Manager is configured as the deprecated
-> helper name `manager-core`, whose binary is absent; the present binary is
-> `git-credential-manager.exe`, and it would not serve the stored credential
-> non-interactively). The work is committed locally on `main` with `origin`
-> already configured. To publish:
+> could not supply. The work is committed locally on `main` with `origin`
+> already configured; nothing else is outstanding.
+>
+> What was tried, so the fix is not re-guessed:
+>
+> * `credential.helper` is globally set to **`manager-core`**, a name Git
+>   Credential Manager retired; no such binary exists on this machine. The
+>   installed one is `C:\Program Files\Git\mingw64\bin\git-credential-manager.exe`.
+> * Overriding it per-invocation (`-c credential.helper= -c
+>   credential.helper=manager`) got GCM to run, but it would not serve the
+>   stored `git:https://github.com` credential without a prompt.
+> * There is an SSH key at `~/.ssh/id_ed25519` inside the WSL Ubuntu guest,
+>   but GitHub rejects it — `Permission denied (publickey)`. It is not
+>   registered on the account.
+>
+> Either route works once a human is at the keyboard:
 >
 > ```bash
-> git config --global credential.helper manager   # fix the stale helper name
-> git push -u origin main
+> git config --global credential.helper manager
 > ```
 >
-> Nothing else is outstanding for the push.
+> ```bash
+> git -C "C:/Users/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux" push -u origin main
+> ```
 
 ---
 
@@ -151,40 +163,94 @@ references (`cvsKrylovDemo_ls` x4, `idasAkzoNob_ASAi_dns`), and two
 references missing a final blank line the source prints unconditionally
 (`ark_conserved_exp_entropy_ark 1 1`, `ark_dissipated_exp_entropy 1 1`).
 
-## 4. Why the claim extends to Debian, Arch and Fedora
+## 4. Distribution coverage — measured, and one claim retracted
 
 Nothing in the Rust tree is distribution-specific: `std` only, no
 `cfg(target_os)`, no `cfg(target_arch)`, no build script, no system
 library beyond what `std` itself links. The only distribution-visible
-dependency is the libm behind `f64`'s transcendental methods, and every
-mainstream distribution in those three families ships **glibc** — the same
-implementation, with `pow` on x86-64 taking the same ifunc FMA path on any
-CPU made since Haswell. The reasoning holds for glibc >= 2.28 (Debian 10+,
-Ubuntu 18.10+, Fedora 29+, and rolling Arch).
+dependency is the libm behind `f64`'s transcendental methods.
 
-It does **not** automatically hold for musl-based distributions (Alpine,
-Void musl). musl's `pow` is the same ARM optimized-routines algorithm, so
-`pow` itself agrees, but musl's `sin`/`cos`/`exp`/`log` are not glibc's and
-the gate has not been run there. Treated as out of scope, not as verified.
+**An earlier draft of this file argued that the claim therefore carries to
+"Debian, Arch and Fedora on glibc >= 2.28". That was wrong and has been
+retracted.** glibc's libm is not frozen across releases, and measuring it
+is what showed so. `tools/glibc_sweep.sh` builds `tools/libm_probe.c` in
+each distribution's container and hashes 1,000,000 results per function:
+
+| distro | libc | functions disagreeing with the reference host (glibc 2.39) |
+|---|---|---|
+| Debian 12 | glibc 2.36 | `atan` |
+| **Ubuntu 24.04** | **glibc 2.39** | — (reference host) |
+| Fedora 41 | glibc 2.40 | none |
+| Debian 13 | glibc 2.41 | none |
+| Arch (rolling) | glibc 2.44 | `sinh`, `cosh`, `acosh` |
+| Alpine 3.20 | musl | everything except `sqrt` — including `pow` |
+
+`pow` is bit-identical on every glibc tested, so §2's result carries to all
+of them. `sqrt` matches everywhere, as IEEE-754 requires.
+
+`tools/gate_in_container.sh` then ran the **full 199-variant gate natively
+inside three of those containers**, to find out whether those libm
+differences are output-observable:
+
+| distro | libc | rustc | gate | vs. reference host |
+|---|---|---|---|---|
+| Ubuntu 24.04 | 2.39 | 1.93.1 | **153 / 26 / 20** | reference |
+| Debian 12 | 2.36 | 1.97.1 | **153 / 26 / 20** | identical variant set |
+| Fedora 41 | 2.40 | 1.97.1 | **153 / 26 / 20** | identical variant set |
+| Arch | 2.44 | 1.97.1 | **150 / 29 / 20** | +3 variants diverge |
+
+0 build failures and 0 run failures everywhere; the containers used a
+*newer* rustc than the host, so the result is toolchain-stable too.
+
+**Verified coverage: glibc 2.36 through 2.41** — Debian 12, Ubuntu 24.04,
+Debian 13, Fedora 41. Debian 12's `atan` difference is real but not
+output-observable: no variant evaluates `atan` where 2.36 and 2.39 disagree.
+
+**Arch (glibc 2.44): three variants diverge** —
+`ark_analytic_lsrk_domeigest` (both argv variants) and
+`ark_analytic_lsrk_varjac`. Predicted from the fingerprint table before the
+gate was run, then confirmed by it: `sinh`, `cosh` and `acosh` are called
+from exactly one place in the library, `arkode_lsrkstep.rs:87`, and glibc
+2.44 changed all three. A libm-version effect, not a port defect — the port
+runs correctly there, but three reference outputs will not reproduce
+byte-for-byte.
+
+**musl is out of scope**, now for a measured reason: `sin`, `cos`, `exp`,
+`log`, `asin`, `acos`, `atan` and the hyperbolics all differ from glibc's.
+Its `pow` differs too, but that one does not matter — the port does not use
+the host `pow`.
 
 ## 5. Open items
 
 Nothing blocks the port; these would strengthen the evidence.
 
-1. **Bare-metal re-run.** All numbers above come from WSL2, which is a
-   real Linux kernel with real glibc and real x86-64 instructions — the
-   arithmetic cannot differ — but a run on a bare-metal Ubuntu box would
-   remove the question. Re-run: `tools/pow_differential.sh all` and
-   `tools/verify_examples.sh all`.
+1. **Bare-metal re-run.** All numbers above come from WSL2 (including the
+   containers, which share its kernel). That is a real Linux kernel with
+   real glibc and real x86-64 instructions, so the arithmetic cannot
+   differ — and §4's four-distribution agreement, across three glibc
+   versions and two rustc versions, is strong corroboration that nothing
+   about the environment is load-bearing. A run on a bare-metal Ubuntu box
+   would still remove the last of the question. Re-run:
+   `tools/pow_differential.sh all` and `tools/verify_examples.sh all`.
 2. ~~**Native pristine-C rebuild for the content divergences.**~~ **Done.**
    Upstream SUNDIALS 7.8.0 was built here with cmake + gcc 13.3.0 and all
    26 divergent variants compared three ways; Rust == pristine C in every
    case (§3). `tools/pristine_c_build.sh`,
    `tools/compare_pristine_c.sh`, `tools/compare_lapack_substituted.sh`.
-3. **glibc version sweep.** Measured against 2.39. A quick re-run of
-   `tools/pow_differential.sh domain` under a Debian 12 (2.36) and a
-   Fedora 41 (2.40) container would turn §4's argument into a measurement.
-4. **musl**, if it is ever wanted: out of scope today (§4).
+3. ~~**glibc version sweep.**~~ **Done, and it changed the answer** — see
+   §4. libm fingerprints across five distributions plus the full gate
+   re-run natively on three of them. Verified coverage is glibc 2.36–2.41;
+   Arch's 2.44 moves three LSRK variants. `tools/glibc_sweep.sh`,
+   `tools/gate_in_container.sh`.
+4. **Arch / glibc 2.44, if byte-identity there is ever wanted.** The three
+   divergent variants all trace to `SUNRsinh`/`SUNRcosh`/`SUNRacosh` in
+   `arkode_lsrkstep.rs:87`. Porting those three the way `pow` was ported —
+   a host-independent Rust implementation of the glibc algorithm — would
+   close it. Not done: it would fix one distribution's three variants at
+   the cost of a second hand-maintained libm routine set, and the port is
+   correct there either way.
+5. **musl**, if it is ever wanted: out of scope, for the measured reason
+   in §4.
 
 ## 6. How to reproduce, from a clean checkout
 

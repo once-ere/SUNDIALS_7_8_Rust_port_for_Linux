@@ -56,7 +56,7 @@ reference examples, not "close enough".
 | Version | tracks upstream 7.8.0 (`SUNDIALS_VERSION` = `"7.8.0"`) |
 | Conditional compilation | none — 0 `cfg(target_os)`, 0 `cfg(target_arch)` in the tree |
 | Verified platform | **Linux on Intel/AMD x86-64**, glibc 2.39, gcc 13.3.0 (Ubuntu 24.04) |
-| Distribution coverage | Debian / Ubuntu / Arch / Fedora families on glibc ≥ 2.28 — see `README.md` § "Distribution coverage" |
+| Distribution coverage | measured: glibc 2.36–2.41 (Debian 12, Ubuntu 24.04, Debian 13, Fedora 41) give the identical gate result; Arch/glibc 2.44 moves 3 LSRK variants; musl out of scope — see `README.md` § "Distribution coverage" |
 | Other platforms | builds and unit-tests anywhere Rust targets; byte-identical output **not** claimed off glibc/x86-64 (the macOS/arm64 sibling repo claims it there) |
 
 Roughly 192k lines of Rust across 141 modules, plus 108 translated example

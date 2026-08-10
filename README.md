@@ -10,9 +10,11 @@ glibc.**
 
 > Every numerical result in this repository was measured on **Ubuntu 24.04
 > x86-64, glibc 2.39, gcc 13.3.0, rustc 1.93.1**, on a CPU with FMA. The
-> reasoning in [Distribution coverage](#distribution-coverage) extends the
-> claim to the Debian, Arch and Fedora families on glibc >= 2.28; it does not
-> extend to musl distributions, to arm64, or to Windows.
+> gate was then **re-run natively on Debian 12 (glibc 2.36), Fedora 41
+> (glibc 2.40) and Arch (glibc 2.44)** — see
+> [Distribution coverage](#distribution-coverage-measured-not-argued), which
+> reports the one distribution where three variants differ and why. The
+> claim does not extend to musl, to arm64, or to Windows.
 >
 > This is the *good* platform for this port, and the reason is worth stating
 > plainly: the upstream reference `.out` files were generated on a glibc host.
@@ -152,19 +154,68 @@ five trailing-whitespace-stripped references (`cvsKrylovDemo_ls` ×4,
 `idasAkzoNob_ASAi_dns`), and two references missing a final blank line the
 source prints unconditionally.
 
-## Distribution coverage
+## Distribution coverage — measured, not argued
 
 Nothing in the Rust tree is distribution-specific: `std` only, no
 `cfg(target_os)`, no `cfg(target_arch)`, no build script, no system library
 beyond what `std` itself links. The only distribution-visible dependency is
-the libm behind `f64`'s transcendental methods, and Debian, Ubuntu, Arch and
-Fedora all ship **glibc**, with `pow` on x86-64 taking the same ifunc FMA path
-on any CPU since Haswell. The claim therefore covers those families on
-glibc ≥ 2.28 (Debian 10+, Ubuntu 18.10+, Fedora 29+, rolling Arch).
+the libm behind `f64`'s transcendental methods.
 
-It does **not** cover musl distributions (Alpine, Void musl). musl's `pow` is
-the same algorithm, so `pow` agrees, but its `sin`/`cos`/`exp`/`log` are not
-glibc's and the gate has not been run there. Out of scope, not verified.
+The tempting argument is "Debian, Arch and Fedora all ship glibc, so the
+claim carries to all of them." **That argument is wrong, and measuring it
+is what showed so.** glibc's libm is not frozen across releases.
+[`tools/glibc_sweep.sh`](tools/glibc_sweep.sh) fingerprints every function
+the port reaches — an FNV-1a hash over 1,000,000 deterministic inputs each,
+via [`tools/libm_probe.c`](tools/libm_probe.c) — in each distribution's
+container:
+
+| distro | libc | functions disagreeing with the reference host (glibc 2.39) |
+|---|---|---|
+| Debian 12 | glibc 2.36 | `atan` |
+| **Ubuntu 24.04** | **glibc 2.39** | — (reference host) |
+| Fedora 41 | glibc 2.40 | none |
+| Debian 13 | glibc 2.41 | none |
+| Arch (rolling) | glibc 2.44 | `sinh`, `cosh`, `acosh` |
+| Alpine 3.20 | musl | everything except `sqrt` — including `pow` |
+
+`pow` is bit-identical across every glibc version tested, so the
+deterministic `pow` result carries to all of them. `sqrt` matches
+everywhere, as IEEE-754 requires.
+
+Then [`tools/gate_in_container.sh`](tools/gate_in_container.sh) ran the
+**full 199-variant gate natively inside three of those containers** to find
+out whether the libm differences are output-observable:
+
+| distro | libc | rustc | gate | vs. the reference host |
+|---|---|---|---|---|
+| Ubuntu 24.04 | 2.39 | 1.93.1 | **153 / 26 / 20** | reference |
+| Debian 12 | 2.36 | 1.97.1 | **153 / 26 / 20** | identical variant set |
+| Fedora 41 | 2.40 | 1.97.1 | **153 / 26 / 20** | identical variant set |
+| Arch | 2.44 | 1.97.1 | **150 / 29 / 20** | +3 variants diverge |
+
+(`IDENTICAL / DIFF / EXCLUDED`; 0 build failures and 0 run failures
+everywhere. The containers also used a *newer* rustc than the host, so the
+result is toolchain-stable as well as distribution-stable.)
+
+**Conclusion.** The port and its gate carry unchanged to Debian 12, Ubuntu
+24.04, Debian 13 and Fedora 41 — glibc 2.36 through 2.41. Debian 12's
+`atan` difference exists but is not output-observable: nothing in the
+199 variants evaluates `atan` where 2.36 and 2.39 disagree.
+
+On **Arch (glibc 2.44)** exactly three more variants diverge —
+`ark_analytic_lsrk_domeigest` (both argv variants) and
+`ark_analytic_lsrk_varjac`. This was predicted before the gate was run and
+then confirmed by it: `sinh`, `cosh` and `acosh` are called from exactly one
+place in the library, [`arkode_lsrkstep.rs:87`](crates/arkode_rs/src/arkode_lsrkstep.rs:87),
+and glibc 2.44 changed all three. Everything else — including the other
+three LSRK variants — is unaffected. This is a libm-version effect, not a
+port defect; running the port on Arch is fine, but three reference outputs
+will not reproduce byte-for-byte there.
+
+**musl (Alpine, Void musl) is out of scope**, and now for a measured reason
+rather than caution: its `sin`, `cos`, `exp`, `log`, `asin`, `acos`, `atan`
+and the hyperbolics all differ from glibc's. (Its `pow` differs too — but
+that one does not matter, because the port does not use the host `pow`.)
 
 ## Documentation
 

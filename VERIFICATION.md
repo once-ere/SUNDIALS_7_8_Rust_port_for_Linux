@@ -16,6 +16,15 @@ Raw output: `logs/summary.txt`.
 | **port defects** | 0 | **0** |
 | total variants | 199 | 199 |
 
+The same 153 / 26 / 20 result was reproduced natively inside **Debian 12
+(glibc 2.36)** and **Fedora 41 (glibc 2.40)** containers, with a newer
+rustc (1.97.1), variant for variant. On **Arch (glibc 2.44)** the tally is
+150 / 29 / 20: three further variants — `ark_analytic_lsrk_domeigest` (both
+argv variants) and `ark_analytic_lsrk_varjac` — diverge because that glibc
+changed `sinh`, `cosh` and `acosh`, which the library calls from exactly
+one place (`arkode_lsrkstep.rs:87`). See `README.md` § "Distribution
+coverage" and `evidence/linux-x86_64-glibc239/gate-*.txt`.
+
 **26 variants that diverged on macOS are byte-identical here.** That is the
 predicted effect of running on the platform whose libm generated the
 upstream `.out` files, and it is the central evidence for this port's
