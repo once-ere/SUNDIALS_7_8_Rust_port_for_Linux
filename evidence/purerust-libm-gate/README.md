@@ -8,21 +8,38 @@ are that re-run.
 | build | host | glibc | rustc | IDENTICAL / DIFF / EXCLUDED |
 |---|---|---|---:|---|
 | host libm (historical) | Ubuntu 24.04 | 2.39 | 1.93.1 | 153 / 26 / 20 |
-| host libm (historical) | Arch | 2.44 | 1.97.1 | 150 / 29 / 20 |
+| host libm (historical) | Debian 12 | 2.36 | 1.97.1 | 153 / 26 / 20 |
+| host libm (historical) | Fedora 41 | 2.40 | 1.97.1 | 153 / 26 / 20 |
+| host libm (historical) | Arch | 2.44 | 1.97.1 | **150 / 29 / 20** |
 | **pure-Rust libm** | **Ubuntu 26.04** | **2.43** | **1.96.1** | **145 / 34 / 20** |
+| **pure-Rust libm** | **Debian 12** | **2.36** | **1.97.1** | **145 / 34 / 20** |
+| **pure-Rust libm** | **Fedora 41** | **2.40** | **1.97.1** | **145 / 34 / 20** |
 | **pure-Rust libm** | **Arch** | **2.44** | **1.97.1** | **145 / 34 / 20** |
 
 Two results, and the second is the one that matters.
 
-**1. The host dependence is gone.** Under the host libm, Arch diverged on
-three variants that Ubuntu did not — 150 against 153 — because glibc 2.44
-changed `sinh`, `cosh` and `acosh`. Under the pure-Rust libm the two hosts
-produce **the same 145, the same 34, and the same 34 variant names**, across
-two glibc versions and two rustc versions. That is what the substitution was
-for, and it is now measured rather than predicted.
+**1. The host dependence is gone.** Under the host libm the score depended on
+which glibc you linked: 153 on 2.36 through 2.41, but 150 on Arch's 2.44,
+because that release changed `sinh`, `cosh` and `acosh`. Under the pure-Rust
+libm, **four hosts spanning glibc 2.36, 2.40, 2.43 and 2.44 all report
+145 / 34 / 20 — and the same 34 variants, name for name.** The DIFF lists are
+byte-identical files. Arch is no longer an outlier; there is no outlier,
+because the score no longer depends on the host at all. Two rustc versions
+are covered too (1.96.1 on the host, 1.97.1 in every container), so the
+result is toolchain-stable as well.
 
-**2. It cost eight reference matches, on every host.** 153 became 145
-everywhere, not just on Arch. The eight that flipped from IDENTICAL to DIFF
+Checking that claim yourself:
+
+```bash
+for f in gate-*.txt; do
+  echo "$f"; sed -n '/variants reported DIFF here/,$p' "$f" | tail -n +2 | sort | md5sum
+done
+```
+
+All four digests match.
+
+**2. It cost eight reference matches, on every host.** 153 became 145 on all
+four, not just on Arch. The eight that flipped from IDENTICAL to DIFF
 are *exactly* the eight that `differences/ab-host-libm.tsv` attributes to the
 libm, with zero other class changes:
 
@@ -47,6 +64,10 @@ criterion is "matches the shipped `.out`" is worse off by eight variants.
 Reproduce:
 
 ```bash
-tools/verify_examples.sh all                          # this host -> logs/summary.txt
-tools/gate_in_container.sh archlinux:latest           # Arch  -> logs/gate-archlinux-latest.txt
+tools/verify_examples.sh all                                  # this host
+tools/gate_in_container.sh debian:12 fedora:41 archlinux:latest
 ```
+
+`gate_in_container.sh` takes docker or podman, and copies the workspace into
+each container rather than mounting it writable, so nothing on the host is
+touched.

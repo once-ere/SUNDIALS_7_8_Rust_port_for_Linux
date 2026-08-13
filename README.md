@@ -336,8 +336,9 @@ Then [`tools/gate_in_container.sh`](tools/gate_in_container.sh) ran the
 out whether the libm differences are output-observable:
 
 All four rows below are **host-libm** measurements, kept as the historical
-baseline; under the pure-Rust libm every glibc tested gives 145 / 34 / 20
-(see the note after the table).
+baseline. They are the reason the pure-Rust libm exists: the score moves with
+the host. Under the pure-Rust libm all four give 145 / 34 / 20 instead — see
+the note after the table.
 
 | distro | libc | rustc | gate (host libm) | vs. the reference host |
 |---|---|---|---|---|
@@ -364,12 +365,17 @@ module in the library — the wrappers are defined at
 used from two sites in that same file — and glibc 2.44 changed all three.
 
 **This whole section describes host-libm behaviour, and the gate has since
-been re-run without it.** Under the pure-Rust libm, Arch and Ubuntu 26.04
-both score **145 / 34 / 20 on the same 34 variants** — the host dependence
-is gone, measured across two glibc versions. The cost is that 153 became 145
-*everywhere*: the eight variants that flipped are exactly the eight
-attributed to the libm, the three Arch ones among them. Host-independence
-was bought with eight reference matches, not with reference agreement. See
+been re-run without it — on four hosts.** Under the pure-Rust libm, glibc
+**2.36 (Debian 12), 2.40 (Fedora 41), 2.43 (Ubuntu 26.04) and 2.44 (Arch)**
+all score **145 / 34 / 20**, and not merely the same tally: the same 34
+variants, name for name, with byte-identical DIFF lists. Arch is no longer an
+outlier because there is no outlier — the score no longer depends on the host.
+Two rustc versions are covered as well.
+
+The cost is that 153 became 145 on all four: the eight variants that flipped
+are exactly the eight attributed to the libm, the three former Arch ones among
+them. Host-independence was bought with eight reference matches, not with
+reference agreement. See
 [`evidence/purerust-libm-gate/`](evidence/purerust-libm-gate/). Everything else — including the other
 three LSRK variants — is unaffected. This is a libm-version effect, not a
 port defect; running the port on Arch is fine, but three reference outputs
