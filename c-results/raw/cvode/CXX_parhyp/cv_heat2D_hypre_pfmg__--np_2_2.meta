@@ -5,6 +5,6 @@ argv:     --np 2 2
 launcher: mpirun --oversubscribe -np 4
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/cvode/CXX_parhyp/cv_heat2D_hypre_pfmg__--np_2_2
 exit:     0 (OK)
-seconds:  0.715
+seconds:  0.710
 stdout:   3049 bytes, sha256 7b01c83961d83e2c9620eb5dd412b006aa3ba9a03d905906fd2196ba55e1da7f
 stderr:   0 bytes

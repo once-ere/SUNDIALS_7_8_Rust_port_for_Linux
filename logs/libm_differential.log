@@ -44,7 +44,7 @@ test sundials_libm::tests::libm_differential_correctly_rounded ... ok
  acosh wide   n=1000000   rust==host 1000000   (100.0000%)  max|err| rust 0.5000 ulp, host 0.5000 ulp
 test sundials_libm::tests::libm_differential_dd_derived ... ok
 
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 2.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 2.02s
 
 
 == end ==

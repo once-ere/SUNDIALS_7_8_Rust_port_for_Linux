@@ -5,6 +5,6 @@ argv:     --np 2 2
 launcher: mpirun --oversubscribe -np 4
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/arkode/CXX_parallel/ark_heat2D_lsrk_p__--np_2_2
 exit:     0 (OK)
-seconds:  0.807
+seconds:  0.806
 stdout:   3252 bytes, sha256 d89fa4bfa753b1bf44c46b4af7e999bd7fc61d8541042ef6fc1dd6cde3c60dc5
 stderr:   0 bytes

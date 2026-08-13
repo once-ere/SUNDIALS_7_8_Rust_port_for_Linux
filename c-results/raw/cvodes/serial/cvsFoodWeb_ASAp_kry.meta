@@ -5,6 +5,6 @@ argv:
 launcher: <direct>
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/cvodes/serial/cvsFoodWeb_ASAp_kry
 exit:     0 (OK)
-seconds:  0.707
+seconds:  0.706
 stdout:   961 bytes, sha256 ab4dd07a66053a31c6fed4a58b80c9a2b3b962032afec7a8d799e7cf210ad3a7
 stderr:   0 bytes
