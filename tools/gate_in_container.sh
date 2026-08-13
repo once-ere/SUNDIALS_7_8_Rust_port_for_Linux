@@ -12,7 +12,8 @@
 #
 #   tools/gate_in_container.sh debian:12 archlinux:latest
 #
-# Requires docker and network access (each container downloads rustup).
+# Requires docker or podman, and network access (each container downloads
+# rustup). $CONTAINER_RUNTIME overrides the auto-detection.
 # Nothing is installed on the host and nothing is written into the
 # workspace; the container gets read-only mounts and copies what it needs.
 # Per-distribution summaries are written to logs/gate-<image>.txt.
@@ -23,9 +24,26 @@ UP="$(cd .. && pwd)"
 LOGS="$WS_ROOT/logs"
 mkdir -p "$LOGS"
 
-# examples/ may be a symlink in the WSL sandbox; docker needs the real path.
-EXAMPLES="$(readlink -f "$UP/examples")"
-[ -d "$EXAMPLES" ] || { echo "no upstream examples/ at $UP/examples"; exit 1; }
+# docker is not the only game: podman takes the same arguments for everything
+# used here, and is what is installed on the Ubuntu 26.04 host.
+RT="${CONTAINER_RUNTIME:-}"
+if [ -z "$RT" ]; then
+  for c in docker podman; do command -v "$c" >/dev/null 2>&1 && { RT=$c; break; }; done
+fi
+[ -n "$RT" ] || { echo "no container runtime: install docker or podman"; exit 1; }
+"$RT" info >/dev/null 2>&1 || { echo "$RT is installed but its daemon is not reachable"; exit 1; }
+echo "container runtime: $RT"
+
+# The example tree used to live only in the parent directory. It is vendored
+# at the workspace root now, and verify_examples.sh prefers that copy, so the
+# parent is a fallback rather than a requirement -- this used to exit here.
+if [ -d "$WS_ROOT/examples/cvode/serial" ]; then
+  EXAMPLES="$(readlink -f "$WS_ROOT/examples")"
+elif [ -d "$UP/examples/cvode/serial" ]; then
+  EXAMPLES="$(readlink -f "$UP/examples")"
+else
+  echo "no upstream examples/ at $WS_ROOT/examples or $UP/examples"; exit 1
+fi
 
 installer() {
   case "$1" in
@@ -39,7 +57,7 @@ installer() {
 for image in "$@"; do
   tag="${image//[:\/]/-}"
   echo "=== $image ==="
-  docker run --rm \
+  "$RT" run --rm \
     -v "$WS_ROOT:/src:ro" -v "$EXAMPLES:/w/examples:ro" \
     "$image" bash -c "
       set -e
@@ -47,8 +65,9 @@ for image in "$@"; do
       curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --no-modify-path >/dev/null
       export PATH=\$HOME/.cargo/bin:\$PATH
       mkdir -p /w/port
-      cp -r /src/. /w/port/
-      rm -rf /w/port/target /w/port/logs /w/port/.git
+      # copy without target/ and .git rather than copying then deleting them:
+      # target/ alone is several GB of release artefacts.
+      tar -C /src --exclude=./target --exclude=./.git --exclude=./logs -cf - . | tar -C /w/port -xf -
       cd /w/port
       for f in tools/*.sh; do sed -i 's/\r\$//' \"\$f\"; done
       echo \"--- \$(ldd --version 2>/dev/null | head -1) / \$(rustc -V) ---\"

@@ -59,8 +59,11 @@ Acceptance is byte-identical printed output against the upstream C examples,
   5,900,000 domain inputs and 0 over 20,000,000 unrestricted finite inputs.**
 * Two gates, both over the same 199 `(example, argv)` variants — see
   [Two gates](#two-gates-and-why-both):
-  * **vs the shipped `.out` references:** 153 identical, 26 reference-side,
-    20 excluded, **0 port defects**.
+  * **vs the shipped `.out` references:** **145 identical, 34
+    reference-side, 20 excluded, 0 port defects** as the tree stands. It was
+    153 / 26 / 20 before the pure-Rust libm; the eight that moved are the
+    eight the libm accounts for, and the score is now the same on every
+    glibc tested rather than varying by host.
   * **vs the upstream C rebuilt on the same machine:** 175 of 190 comparable
     identical; the 15 that differ decompose exactly into 8 libm + 7 sparse LU
     with **0 unaccounted for**.
@@ -208,6 +211,10 @@ residual (`cargo test -p ida_rs --example idaHeat2D_klu`).
 
 ## Verification results
 
+Both columns are **host-libm** measurements — the configuration in which the
+macOS comparison was made. The current tree scores 145 / 34 / 20; see
+[`evidence/purerust-libm-gate/`](evidence/purerust-libm-gate/).
+
 | | macOS / arm64 (inherited) | **Linux / x86-64 (here)** |
 |---|---:|---:|
 | IDENTICAL | 127 | **153** |
@@ -252,15 +259,15 @@ source prints unconditionally.
 
 The section above is one gate. There is a second, and they are easy to
 confuse because both cover the same 199 `(example, argv)` variants and both
-report a count of byte-identical outputs — 153 and 175. **175 is not a
-correction of 153.** They compare Rust against different things:
+report a count of byte-identical outputs — 145 and 175. **175 is not a
+correction of 145.** They compare Rust against different things:
 
 | | **vs the shipped `.out`** | **vs C rebuilt here** |
 |---|---|---|
 | reference | the files inside SUNDIALS 7.8.0 | the upstream C compiled from source, minutes apart |
 | machine | Ubuntu 24.04, glibc 2.39, host libm | Ubuntu 26.04, glibc 2.43, pure-Rust libm |
 | KLU examples | 20 excluded with SuperLU | 11 ported and compared, 9 SuperLU still out |
-| identical | **153** of 199 | **175** of 199 |
+| identical | **145** of 199 (153 before the pure-Rust libm) | **175** of 199 |
 | where | [`VERIFICATION.md`](VERIFICATION.md), [`evidence/linux-x86_64-glibc239/`](evidence/linux-x86_64-glibc239/) | [`differences/`](differences/), [`c-results/`](c-results/), [`rust-results/`](rust-results/) |
 
 The first asks whether the port reproduces the *published* reference —
@@ -328,7 +335,11 @@ Then [`tools/gate_in_container.sh`](tools/gate_in_container.sh) ran the
 **full 199-variant gate natively inside three of those containers** to find
 out whether the libm differences are output-observable:
 
-| distro | libc | rustc | gate | vs. the reference host |
+All four rows below are **host-libm** measurements, kept as the historical
+baseline; under the pure-Rust libm every glibc tested gives 145 / 34 / 20
+(see the note after the table).
+
+| distro | libc | rustc | gate (host libm) | vs. the reference host |
 |---|---|---|---|---|
 | Ubuntu 24.04 | 2.39 | 1.93.1 | **153 / 26 / 20** | reference |
 | Debian 12 | 2.36 | 1.97.1 | **153 / 26 / 20** | identical variant set |
@@ -351,8 +362,15 @@ then confirmed by it: `sinh`, `cosh` and `acosh` are reached from exactly one
 module in the library — the wrappers are defined at
 [`arkode_lsrkstep.rs:83-98`](crates/arkode_rs/src/arkode_lsrkstep.rs:83) and
 used from two sites in that same file — and glibc 2.44 changed all three.
-(Under the pure-Rust libm this no longer moves with the host at all; the
-Arch result describes the host-libm behaviour these variants used to have.) Everything else — including the other
+
+**This whole section describes host-libm behaviour, and the gate has since
+been re-run without it.** Under the pure-Rust libm, Arch and Ubuntu 26.04
+both score **145 / 34 / 20 on the same 34 variants** — the host dependence
+is gone, measured across two glibc versions. The cost is that 153 became 145
+*everywhere*: the eight variants that flipped are exactly the eight
+attributed to the libm, the three Arch ones among them. Host-independence
+was bought with eight reference matches, not with reference agreement. See
+[`evidence/purerust-libm-gate/`](evidence/purerust-libm-gate/). Everything else — including the other
 three LSRK variants — is unaffected. This is a libm-version effect, not a
 port defect; running the port on Arch is fine, but three reference outputs
 will not reproduce byte-for-byte there.

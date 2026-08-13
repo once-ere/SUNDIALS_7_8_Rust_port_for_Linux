@@ -2,6 +2,15 @@
 
 Project: **SUNDIALS_7_8_Rust_port_for_Linux**.
 
+> **Scope note.** Every figure in Part A was measured with the **host** libm,
+> before `crates/sundials_core/src/sundials_libm.rs` existed. Under the
+> pure-Rust libm the gate scores **145 / 34 / 20**, identically on Ubuntu
+> 26.04 (glibc 2.43) and Arch (glibc 2.44) — the eight variants that moved
+> are exactly the eight attributed to the libm, and the score no longer
+> varies by host. See [`evidence/purerust-libm-gate/`](evidence/purerust-libm-gate/).
+> Part A is kept as the historical baseline and as the per-variant
+> root-cause analysis, which is unaffected.
+
 ## Part A — Linux / x86-64 / glibc results (this repository)
 
 Measured on Ubuntu 24.04 x86-64, glibc 2.39, gcc 13.3.0, rustc 1.93.1.

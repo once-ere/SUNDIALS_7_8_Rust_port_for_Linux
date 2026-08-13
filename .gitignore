@@ -6,6 +6,8 @@
 /logs/*
 !/logs/c_build.log
 !/logs/libm_differential.log
+# summary.txt is the gate result; evidence/purerust-libm-gate/ holds the
+# copies the documents cite, so the live one stays scratch.
 .claude/
 
 # Runtime artifacts examples write into their CWD (stats CSVs, solution
