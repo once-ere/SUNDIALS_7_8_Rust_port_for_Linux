@@ -367,10 +367,18 @@ Evidence: [`evidence/purerust-libm-gate/`](evidence/purerust-libm-gate/).
 The table above describes **host-libm** behaviour and is kept as the
 historical baseline.
 
-**musl is out of scope**, now for a measured reason: `sin`, `cos`, `exp`,
-`log`, `asin`, `acos`, `atan` and the hyperbolics all differ from glibc's.
-Its `pow` differs too, but that one does not matter — the port does not use
-the host `pow`.
+**musl is no longer out of scope, and the sweep row above is exactly why the
+old exclusion is void.** That row says Alpine's libm disagrees with glibc on
+everything except `sqrt` — which mattered enormously when the port called the
+host for `sin`, `cos`, `exp`, `log` and the rest, and matters not at all now
+that it calls none of them. Measured: **Alpine 3.20.10 / musl 1.2.5 scores
+145 / 34 / 20, with a DIFF list byte-identical to all four glibc hosts.** The
+port is libc-independent, not merely glibc-version-independent.
+
+Two limits, so this is not read as more than it is. Only the reference gate
+ran on Alpine — there is no C toolchain build there, so the C-versus-Rust
+comparison and the libm differential were not repeated on musl. And it is
+x86-64 throughout; arm64 remains untested.
 
 ## 5. Open items
 
@@ -414,8 +422,11 @@ Nothing blocks the port; these would strengthen the evidence.
    computes. What the substitution bought was host-independence, not
    reference agreement, and it cost eight reference matches on every host.
    See [`evidence/purerust-libm-gate/`](evidence/purerust-libm-gate/).
-5. **musl**, if it is ever wanted: out of scope, for the measured reason
-   in §4.
+5. ~~**musl**, if it is ever wanted: out of scope, for the measured reason
+   in §4.~~ **Done.** Alpine 3.20.10 / musl 1.2.5 gives 145 / 34 / 20 with a
+   DIFF list byte-identical to the glibc hosts (§4). Gate A only: there is no
+   C build on Alpine, so gate B and the libm differential were not repeated
+   there.
 
 ## 6. How to reproduce, from a clean checkout
 

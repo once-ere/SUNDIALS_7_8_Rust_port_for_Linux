@@ -15,18 +15,32 @@ are that re-run.
 | **pure-Rust libm** | **Debian 12** | **2.36** | **1.97.1** | **145 / 34 / 20** |
 | **pure-Rust libm** | **Fedora 41** | **2.40** | **1.97.1** | **145 / 34 / 20** |
 | **pure-Rust libm** | **Arch** | **2.44** | **1.97.1** | **145 / 34 / 20** |
+| **pure-Rust libm** | **Alpine 3.20.10** | **musl 1.2.5** | **1.97.1** | **145 / 34 / 20** |
 
 Two results, and the second is the one that matters.
 
 **1. The host dependence is gone.** Under the host libm the score depended on
 which glibc you linked: 153 on 2.36 through 2.41, but 150 on Arch's 2.44,
 because that release changed `sinh`, `cosh` and `acosh`. Under the pure-Rust
-libm, **four hosts spanning glibc 2.36, 2.40, 2.43 and 2.44 all report
-145 / 34 / 20 — and the same 34 variants, name for name.** The DIFF lists are
-byte-identical files. Arch is no longer an outlier; there is no outlier,
-because the score no longer depends on the host at all. Two rustc versions
-are covered too (1.96.1 on the host, 1.97.1 in every container), so the
-result is toolchain-stable as well.
+libm, **five hosts spanning glibc 2.36, 2.40, 2.43, 2.44 and musl 1.2.5 all
+report 145 / 34 / 20 — and the same 34 variants, name for name.** The DIFF
+lists are byte-identical files. Arch is no longer an outlier; there is no
+outlier, because the score no longer depends on the host at all. Two rustc
+versions are covered too (1.96.1 on the host, 1.97.1 in every container), so
+the result is toolchain-stable as well.
+
+**musl is the surprising one.** It was previously out of scope for a measured
+reason: `tools/glibc_sweep.sh` showed Alpine disagreeing with glibc on `sin`,
+`cos`, `exp`, `log`, `asin`, `acos`, `atan`, the hyperbolics and `pow` —
+everything except `sqrt`. That reason is void now, because the port does not
+call any of them. On musl it produces the same 145 and the same 34 variants
+as on glibc, which is a stronger statement than distribution-independence:
+the port is **libc-independent**, at least for what the example gate can see.
+
+Two limits on that, so it is not read as more than it is. Only gate A ran on
+Alpine — there is no C toolchain build there, so the C-versus-Rust comparison
+and the libm differential were not repeated on musl. And this is x86-64
+throughout; nothing here says anything about arm64.
 
 Checking that claim yourself:
 
@@ -48,7 +62,7 @@ differently because its file is the raw `logs/summary.txt`, not a container
 log — `gate-*.txt` alone would only cover three of the four.
 
 **2. It cost eight reference matches, on every host.** 153 became 145 on all
-four, not just on Arch. The eight that flipped from IDENTICAL to DIFF
+of them, not just on Arch. The eight that flipped from IDENTICAL to DIFF
 are *exactly* the eight that `differences/ab-host-libm.tsv` attributes to the
 libm, with zero other class changes:
 
@@ -74,7 +88,7 @@ Reproduce:
 
 ```bash
 tools/verify_examples.sh all                                  # this host
-tools/gate_in_container.sh debian:12 fedora:41 archlinux:latest
+tools/gate_in_container.sh debian:12 fedora:41 archlinux:latest alpine:3.20
 ```
 
 `gate_in_container.sh` takes docker or podman, and copies the workspace into

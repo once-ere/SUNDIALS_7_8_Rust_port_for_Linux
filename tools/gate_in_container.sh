@@ -14,6 +14,11 @@
 #
 # Requires docker or podman, and network access (each container downloads
 # rustup). $CONTAINER_RUNTIME overrides the auto-detection.
+#
+# The container is entered through /bin/sh, not bash: Alpine ships busybox ash
+# and would fail before the installer could add bash. Everything before the
+# installer line must therefore stay POSIX; tools/*.sh are invoked as
+# `bash tools/...` explicitly.
 # Nothing is installed on the host and nothing is written into the
 # workspace; the container gets read-only mounts and copies what it needs.
 # Per-distribution summaries are written to logs/gate-<image>.txt.
@@ -50,6 +55,10 @@ installer() {
     debian*|ubuntu*) echo 'export DEBIAN_FRONTEND=noninteractive; apt-get -qq update >/dev/null && apt-get -qq install -y gcc curl ca-certificates diffutils >/dev/null' ;;
     fedora*)         echo 'dnf -y -q install gcc curl diffutils >/dev/null' ;;
     archlinux*)      echo 'pacman -Sy --noconfirm --quiet gcc curl diffutils >/dev/null' ;;
+    # Alpine is musl, and the only image here without bash: busybox ash is
+    # /bin/sh, so bash has to be installed before tools/*.sh can run at all.
+    # musl-dev is what lets rustup-init pick the musl host triple.
+    alpine*)         echo 'apk add --no-cache bash gcc musl-dev curl ca-certificates diffutils tar >/dev/null' ;;
     *)               echo 'true' ;;
   esac
 }
@@ -59,7 +68,7 @@ for image in "$@"; do
   echo "=== $image ==="
   "$RT" run --rm \
     -v "$WS_ROOT:/src:ro" -v "$EXAMPLES:/w/examples:ro" \
-    "$image" bash -c "
+    "$image" sh -c "
       set -e
       $(installer "$image")
       curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --no-modify-path >/dev/null
@@ -70,7 +79,9 @@ for image in "$@"; do
       tar -C /src --exclude=./target --exclude=./.git --exclude=./logs -cf - . | tar -C /w/port -xf -
       cd /w/port
       for f in tools/*.sh; do sed -i 's/\r\$//' \"\$f\"; done
-      echo \"--- \$(ldd --version 2>/dev/null | head -1) / \$(rustc -V) ---\"
+      # musl's ldd writes its version to stderr, so 2>/dev/null blanked this
+      # field on Alpine. 2>&1 keeps it for both libcs.
+      echo \"--- \$(ldd --version 2>&1 | head -1) / \$(rustc -V) ---\"
       cargo build --workspace 2>&1 | grep -E '^(warning|error)' | head -20 || true
       bash tools/verify_examples.sh all >/dev/null 2>&1 || true
       echo 'IDENTICAL:' \$(grep -c 'IDENTICAL\$' logs/summary.txt)

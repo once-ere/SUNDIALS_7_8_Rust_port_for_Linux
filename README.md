@@ -15,12 +15,15 @@ Acceptance is byte-identical printed output against the upstream C examples,
 > 2.39, gcc 13.3.0, rustc 1.93.1**, on a CPU with FMA, and **re-run natively
 > on Debian 12 (glibc 2.36), Fedora 41 (glibc 2.40) and Arch (glibc 2.44)** —
 > see [Distribution coverage](#distribution-coverage--measured-not-argued),
-> which reports the one distribution where three variants differ and why. The
+> which reports the one distribution where three variants differed under the
+> host libm, and why that no longer happens. The
 > C-versus-Rust measurement in
 > [`differences/`](differences/) (with [`c-results/`](c-results/) and
 > [`rust-results/`](rust-results/)) is a
 > second, later run on **Ubuntu 26.04, glibc 2.43, gcc 15.2.0, rustc 1.96.1**.
-> Neither claim extends to musl, to arm64, or to Windows.
+> The reference gate has since been re-run under the pure-Rust libm on **four
+> glibc versions and on musl**, all giving the same result; **arm64 and
+> Windows remain untested.**
 >
 > **What is still platform-bound, and what no longer is.** This used to be a
 > glibc-shaped port: the library evaluated `sin`, `cos`, `exp`, `ln` and the
@@ -381,10 +384,18 @@ three LSRK variants — is unaffected. This is a libm-version effect, not a
 port defect; running the port on Arch is fine, but three reference outputs
 will not reproduce byte-for-byte there.
 
-**musl (Alpine, Void musl) is out of scope**, and now for a measured reason
-rather than caution: its `sin`, `cos`, `exp`, `log`, `asin`, `acos`, `atan`
-and the hyperbolics all differ from glibc's. (Its `pow` differs too — but
-that one does not matter, because the port does not use the host `pow`.)
+**musl is no longer out of scope, and the sweep row above is exactly why the
+old exclusion is void.** That row says Alpine's libm disagrees with glibc on
+everything except `sqrt` — which mattered enormously when the port called the
+host for `sin`, `cos`, `exp`, `log` and the rest, and matters not at all now
+that it calls none of them. Measured: **Alpine 3.20.10 / musl 1.2.5 scores
+145 / 34 / 20, with a DIFF list byte-identical to all four glibc hosts.** The
+port is libc-independent, not merely glibc-version-independent.
+
+Two limits, so this is not read as more than it is. Only the reference gate
+ran on Alpine — there is no C toolchain build there, so the C-versus-Rust
+comparison and the libm differential were not repeated on musl. And it is
+x86-64 throughout; arm64 remains untested.
 
 ## Documentation
 
