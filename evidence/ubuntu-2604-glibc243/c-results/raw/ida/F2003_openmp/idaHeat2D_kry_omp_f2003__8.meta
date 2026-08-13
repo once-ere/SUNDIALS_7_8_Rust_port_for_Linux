@@ -1,0 +1,10 @@
+example:  idaHeat2D_kry_omp_f2003
+source:   examples/ida/F2003_openmp/idaHeat2D_kry_omp_f2003.f90
+binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c/examples/ida/F2003_openmp/idaHeat2D_kry_omp_f2003
+argv:     8
+launcher: <direct>
+cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/ida/F2003_openmp/idaHeat2D_kry_omp_f2003__8
+exit:     0 (OK)
+seconds:  0.506
+stdout:   2763 bytes, sha256 6c897174c54ce832f8e8267c67c46f91f01bf503d8955265367725a4e5aa1038
+stderr:   0 bytes

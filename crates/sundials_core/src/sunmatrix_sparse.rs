@@ -64,6 +64,21 @@ pub fn SM_SPARSETYPE_S(A: &SUNMatrix) -> i32 {
     content_mut(A).sparsetype
 }
 
+/// All three compressed-column arrays behind a single borrow.
+///
+/// `SM_DATA_S`, `SM_INDEXVALS_S` and `SM_INDEXPTRS_S` each take their own
+/// `RefCell` borrow, so holding two of them at once panics. The C code they
+/// translate holds all three pointers simultaneously — every sparse Jacobian
+/// routine does — so callers that need more than one must come through here.
+pub fn SM_CONTENT_S(A: &SUNMatrix) -> RefMut<'_, SUNMatrixContent_Sparse_> {
+    content_mut(A)
+}
+
+/// Alias of [`SM_CONTENT_S`] in the `SUNSparseMatrix_*` naming style.
+pub fn SUNSparseMatrix_Content(A: &SUNMatrix) -> RefMut<'_, SUNMatrixContent_Sparse_> {
+    content_mut(A)
+}
+
 pub fn SM_DATA_S(A: &SUNMatrix) -> RefMut<'_, Vec<sunrealtype>> {
     RefMut::map(A.content.borrow_mut(), |c| {
         &mut c

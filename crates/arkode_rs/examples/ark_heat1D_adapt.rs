@@ -413,10 +413,10 @@ fn f(_t: sunrealtype, y: &N_Vector, ydot: &N_Vector, user_data: &mut Option<Box<
         let dxR = x[i + 1] - x[i];
         Ydot[i] = Y[i - 1] * k * TWO / (dxL * (dxL + dxR)) - Y[i] * k * TWO / (dxL * dxR)
             + Y[i + 1] * k * TWO / (dxR * (dxL + dxR))
-            + TWO * (-TWOHUNDRED * (x[i] - PT25) * (x[i] - PT25)).exp() /* source term */
-            - (-FOURHUNDRED * (x[i] - PT7) * (x[i] - PT7)).exp()
-            + (-FIVEHUNDRED * (x[i] - PT4) * (x[i] - PT4)).exp()
-            - TWO * (-SIXHUNDRED * (x[i] - PT55) * (x[i] - PT55)).exp();
+            + TWO * (-TWOHUNDRED * (x[i] - PT25) * (x[i] - PT25)).sun_exp() /* source term */
+            - (-FOURHUNDRED * (x[i] - PT7) * (x[i] - PT7)).sun_exp()
+            + (-FIVEHUNDRED * (x[i] - PT4) * (x[i] - PT4)).sun_exp()
+            - TWO * (-SIXHUNDRED * (x[i] - PT55) * (x[i] - PT55)).sun_exp();
     }
 
     0 /* Return with success */

@@ -3,6 +3,10 @@ name = "cvode_rs"
 version.workspace = true
 edition.workspace = true
 
+[features]
+# forwards to sundials_core/host-libm; see that manifest
+host-libm = ["sundials_core/host-libm"]
+
 [dependencies]
 sundials_core = { path = "../sundials_core" }
 
@@ -49,6 +53,14 @@ path = "examples/cvParticle_dns.rs"
 [[example]]
 name = "cvPendulum_dns"
 path = "examples/cvPendulum_dns.rs"
+
+[[example]]
+name = "cvRoberts_block_klu"
+path = "examples/cvRoberts_block_klu.rs"
+
+[[example]]
+name = "cvRoberts_klu"
+path = "examples/cvRoberts_klu.rs"
 
 [[example]]
 name = "cvRoberts_dns"

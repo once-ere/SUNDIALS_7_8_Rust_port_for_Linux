@@ -48,7 +48,7 @@ const EVAL: sunrealtype = 2.7182818284590452353602874713526624977572470936999595
 
 /* Convince macros for calling precision-specific math functions */
 fn EXP(x: sunrealtype) -> sunrealtype {
-    x.exp()
+    x.sun_exp()
 }
 
 fn SQRT(x: sunrealtype) -> sunrealtype {
@@ -56,7 +56,7 @@ fn SQRT(x: sunrealtype) -> sunrealtype {
 }
 
 fn LOG(x: sunrealtype) -> sunrealtype {
-    x.ln()
+    x.sun_ln()
 }
 
 /* C `atoi` (strtol semantics): longest valid leading integer, 0 otherwise */

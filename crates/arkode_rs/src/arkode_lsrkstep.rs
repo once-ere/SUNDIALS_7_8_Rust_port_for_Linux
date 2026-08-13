@@ -29,6 +29,7 @@
 //!    impossible (`rhs`, `y0`, `sunctx`, `ark_mem`, and every `T*`
 //!    out-parameter) are dropped; the remaining ones are kept verbatim.
 
+use sundials_core::sundials_libm::SunMath;
 use std::any::Any;
 use std::cell::RefMut;
 
@@ -79,22 +80,22 @@ pub const SIX: sunrealtype = 6.0;
 
 /// C `SUNRlog(x)` = `log(x)` in double precision.
 pub fn SUNRlog(x: sunrealtype) -> sunrealtype {
-    x.ln()
+    x.sun_ln()
 }
 
 /// C `SUNRsinh(x)` = `sinh(x)` in double precision.
 pub fn SUNRsinh(x: sunrealtype) -> sunrealtype {
-    x.sinh()
+    x.sun_sinh()
 }
 
 /// C `SUNRcosh(x)` = `cosh(x)` in double precision.
 pub fn SUNRcosh(x: sunrealtype) -> sunrealtype {
-    x.cosh()
+    x.sun_cosh()
 }
 
 /// C `SUNRacosh(x)` = `acosh(x)` in double precision.
 pub fn SUNRacosh(x: sunrealtype) -> sunrealtype {
-    x.acosh()
+    x.sun_acosh()
 }
 
 /*===============================================================

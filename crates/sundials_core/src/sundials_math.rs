@@ -1,6 +1,7 @@
 //! Port of `src/sundials/sundials_math.c` + `include/sundials/sundials_math.h`
 //! (double-precision branch).
 
+use crate::sundials_libm::SunMath;
 use crate::sundials_types::*;
 
 /// C macro `SUNMIN(A,B)`: `((A) < (B) ? (A) : (B))`.
@@ -42,7 +43,7 @@ pub fn SUNRabs(x: sunrealtype) -> sunrealtype {
 
 /// C macro `SUNRexp(x)`: `exp(x)`.
 pub fn SUNRexp(x: sunrealtype) -> sunrealtype {
-    x.exp()
+    x.sun_exp()
 }
 
 /// C macro `SUNRceil(x)`: `ceil(x)`.
@@ -364,17 +365,17 @@ const POW_LOG_TAB: [(u64, u64, u64); 128] = [
     (0x3fe6e00000000000, 0x3fd57bf753c8d000, 0x3d1fadedee5d40ef),
     (0x3fe6c00000000000, 0x3fd5d5bddf596000, 0xbd0a0b2a08a465dc),
 ];
-const EXP_INVLN2N: u64 = 0x40671547652b82fe;
-const EXP_SHIFT: u64 = 0x4338000000000000;
-const EXP_NEGLN2HIN: u64 = 0xbf762e42fefa0000;
-const EXP_NEGLN2LON: u64 = 0xbd0cf79abc9e3b3a;
-const EXP_POLY: [u64; 4] = [
+pub(crate) const EXP_INVLN2N: u64 = 0x40671547652b82fe;
+pub(crate) const EXP_SHIFT: u64 = 0x4338000000000000;
+pub(crate) const EXP_NEGLN2HIN: u64 = 0xbf762e42fefa0000;
+pub(crate) const EXP_NEGLN2LON: u64 = 0xbd0cf79abc9e3b3a;
+pub(crate) const EXP_POLY: [u64; 4] = [
     0x3fdffffffffffdbd,
     0x3fc555555555543c,
     0x3fa55555cf172b91,
     0x3f81111167a4d017,
 ];
-const EXP_TAB: [u64; 256] = [
+pub(crate) const EXP_TAB: [u64; 256] = [
     0x0000000000000000, 0x3ff0000000000000, 0x3c9b3b4f1a88bf6e, 0x3feff63da9fb3335,
     0xbc7160139cd8dc5d, 0x3fefec9a3e778061, 0xbc905e7a108766d1, 0x3fefe315e86e7f85,
     0x3c8cd2523567f613, 0x3fefd9b0d3158574, 0xbc8bce8023f98efa, 0x3fefd06b29ddf6de,
@@ -648,7 +649,7 @@ fn pow_zeroinfnan(i: u64) -> bool {
 }
 
 /// glibc-compatible `pow(x, y)` (see block comment above).
-fn pow_glibc(x: f64, y: f64) -> f64 {
+pub(crate) fn pow_glibc(x: f64, y: f64) -> f64 {
     let mut sign_bias: u32 = 0;
     let mut ix = x.to_bits();
     let iy = y.to_bits();

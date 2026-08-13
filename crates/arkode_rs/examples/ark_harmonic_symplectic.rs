@@ -233,8 +233,8 @@ fn main() {
     /* Fill the initial conditions (x0 then v0) */
     {
         let mut ydata = N_VGetArrayPointer(&y).expect("y data");
-        ydata[0] = A * phi.cos();
-        ydata[1] = -A * omega * phi.sin();
+        ydata[0] = A * phi.sun_cos();
+        ydata[1] = -A * omega * phi.sun_sin();
     }
 
     /* Create SPRKStep integrator */
@@ -356,8 +356,8 @@ fn Solution(t: sunrealtype, _y: &N_Vector, solvec: &N_Vector, udata: &UserData) 
     let mut sol = N_VGetArrayPointer(solvec).expect("solvec data");
 
     /* compute solution */
-    sol[0] = udata.A * (udata.omega * t + udata.phi).cos();
-    sol[1] = -udata.A * udata.omega * (udata.omega * t + udata.phi).sin();
+    sol[0] = udata.A * (udata.omega * t + udata.phi).sun_cos();
+    sol[1] = -udata.A * udata.omega * (udata.omega * t + udata.phi).sun_sin();
 }
 
 fn Energy(yvec: &N_Vector, _dt: sunrealtype, udata: &UserData) -> sunrealtype {

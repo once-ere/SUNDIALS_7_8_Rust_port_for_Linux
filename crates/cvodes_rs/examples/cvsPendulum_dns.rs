@@ -482,10 +482,10 @@ fn RefSol(tf: sunrealtype, yref: &N_Vector, nout: i32, sunctx: &SUNContext) -> i
             FID,
             "{} {} {} {} {}\n",
             fmt_ew(ZERO, 24, 16),
-            fmt_ew(th.cos(), 24, 16),
-            fmt_ew(th.sin(), 24, 16),
-            fmt_ew(-thd * th.sin(), 24, 16),
-            fmt_ew(thd * th.cos(), 24, 16)
+            fmt_ew(th.sun_cos(), 24, 16),
+            fmt_ew(th.sun_sin(), 24, 16),
+            fmt_ew(-thd * th.sun_sin(), 24, 16),
+            fmt_ew(thd * th.sun_cos(), 24, 16)
         );
     }
 
@@ -526,10 +526,10 @@ fn RefSol(tf: sunrealtype, yref: &N_Vector, nout: i32, sunctx: &SUNContext) -> i
                 FID,
                 "{} {} {} {} {}\n",
                 fmt_ew(t, 24, 16),
-                fmt_ew(th.cos(), 24, 16),
-                fmt_ew(th.sin(), 24, 16),
-                fmt_ew(-thd * th.sin(), 24, 16),
-                fmt_ew(thd * th.cos(), 24, 16)
+                fmt_ew(th.sun_cos(), 24, 16),
+                fmt_ew(th.sun_sin(), 24, 16),
+                fmt_ew(-thd * th.sun_sin(), 24, 16),
+                fmt_ew(thd * th.sun_cos(), 24, 16)
             );
         }
 
@@ -554,10 +554,10 @@ fn RefSol(tf: sunrealtype, yref: &N_Vector, nout: i32, sunctx: &SUNContext) -> i
     {
         let mut yydata = N_VGetArrayPointer(yref).expect("vector data");
 
-        yydata[0] = th.cos();
-        yydata[1] = th.sin();
-        yydata[2] = -thd * th.sin();
-        yydata[3] = thd * th.cos();
+        yydata[0] = th.sun_cos();
+        yydata[1] = th.sun_sin();
+        yydata[2] = -thd * th.sun_sin();
+        yydata[3] = thd * th.sun_cos();
     }
 
     /* Free memory */
@@ -580,7 +580,7 @@ fn fref(_t: sunrealtype, yy: &N_Vector, fy: &N_Vector, _f_data: &mut Option<Box<
     let mut fydata = N_VGetArrayPointer(fy).expect("vector data");
 
     fydata[0] = yydata[1]; /* theta'          */
-    fydata[1] = -GRAV * (yydata[0]).cos(); /* -g * cos(theta) */
+    fydata[1] = -GRAV * (yydata[0]).sun_cos(); /* -g * cos(theta) */
     0
 }
 

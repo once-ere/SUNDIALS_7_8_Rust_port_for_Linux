@@ -344,8 +344,8 @@ fn func(u: &N_Vector, f: &N_Vector, user_data: &mut Option<Box<dyn Any>>) -> i32
     let l2 = udata[4];
     let L2 = udata[5];
 
-    fdata[0] = PT5 * (x1 * x2).sin() - PT25 * x2 / PI - PT5 * x1;
-    fdata[1] = (ONE - PT25 / PI) * ((TWO * x1).exp() - E) + E * x2 / PI - TWO * E * x1;
+    fdata[0] = PT5 * (x1 * x2).sun_sin() - PT25 * x2 / PI - PT5 * x1;
+    fdata[1] = (ONE - PT25 / PI) * ((TWO * x1).sun_exp() - E) + E * x2 / PI - TWO * E * x1;
     fdata[2] = l1 - x1 + lb[0];
     fdata[3] = L1 - x1 + ub[0];
     fdata[4] = l2 - x2 + lb[1];

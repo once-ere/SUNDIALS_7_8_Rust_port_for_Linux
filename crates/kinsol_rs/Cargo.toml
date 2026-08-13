@@ -3,12 +3,20 @@ name = "kinsol_rs"
 version.workspace = true
 edition.workspace = true
 
+[features]
+# forwards to sundials_core/host-libm; see that manifest
+host-libm = ["sundials_core/host-libm"]
+
 [dependencies]
 sundials_core = { path = "../sundials_core" }
 
 [[example]]
 name = "kinAnalytic_fp"
 path = "examples/kinAnalytic_fp.rs"
+
+[[example]]
+name = "kinFerTron_klu"
+path = "examples/kinFerTron_klu.rs"
 
 [[example]]
 name = "kinFerTron_dns"

@@ -10253,6 +10253,7 @@ fn IDAQuadSensRhs1InternalDQ(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sundials_core::sundials_libm::SunMath;
 
     use crate::idas_io::{IDASetSensParams, IDASetUserData};
     use crate::idas_ls::{IDASetLinearSolver, IDALS_SUCCESS};
@@ -10380,7 +10381,7 @@ mod tests {
 
         /* state: y(TEND) = exp(-p*TEND) */
         let yend = N_VGetArrayPointer(&yy).expect("N_VGetArrayPointer")[0];
-        let y_exact = (-P0 * TEND).exp();
+        let y_exact = (-P0 * TEND).sun_exp();
         assert!(
             SUNRabs(yend - y_exact) <= 1.0e-6 * y_exact,
             "state wrong: got {yend}, expected {y_exact}"
@@ -10390,7 +10391,7 @@ mod tests {
         let mut tS = ZERO;
         assert_eq!(IDAGetSens(&ida_mem, &mut tS, &yS), IDA_SUCCESS);
         let s = N_VGetArrayPointer(&yS[0]).expect("N_VGetArrayPointer")[0];
-        let s_exact = -TEND * (-P0 * TEND).exp();
+        let s_exact = -TEND * (-P0 * TEND).sun_exp();
 
         /* the defect signature: with an unshared copy of `p` this is 0 */
         assert!(

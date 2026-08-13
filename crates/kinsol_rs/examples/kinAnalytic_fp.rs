@@ -327,9 +327,9 @@ fn FPFunction(u: &N_Vector, g: &N_Vector, _user_data: &mut Option<Box<dyn Any>>)
     let y = udata[1];
     let z = udata[2];
 
-    gdata[0] = (ONE / THREE) * ((y - ONE) * z).cos() + (ONE / SIX);
-    gdata[1] = (ONE / NINE) * (x * x + z.sin() + ONEPTZEROSIX).sqrt() + PTNINE;
-    gdata[2] = -(ONE / TWENTY) * (-x * (y - ONE)).exp() - (TEN * PI - THREE) / SIXTY;
+    gdata[0] = (ONE / THREE) * ((y - ONE) * z).sun_cos() + (ONE / SIX);
+    gdata[1] = (ONE / NINE) * (x * x + z.sun_sin() + ONEPTZEROSIX).sqrt() + PTNINE;
+    gdata[2] = -(ONE / TWENTY) * (-x * (y - ONE)).sun_exp() - (TEN * PI - THREE) / SIXTY;
 
     0
 }
