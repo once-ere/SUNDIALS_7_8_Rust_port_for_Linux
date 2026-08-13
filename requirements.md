@@ -263,7 +263,19 @@ Running it here needs user-mode emulation, which is not installed:
 
 ```bash
 sudo apt install qemu-user-binfmt
+# then, upstream:
+tools/gate_in_container.sh --platform linux/arm64 debian:13
 ```
+
+**The tooling side is done and tested; only the package is missing.**
+`gate_in_container.sh` takes `--platform` (or `$GATE_PLATFORM`), checks
+`/proc/sys/fs/binfmt_misc/qemu-<arch>` before pulling anything and prints the
+apt line if it is absent, tags the log with the architecture so an emulated
+run cannot overwrite a native one, and records `uname -m` plus an
+`[EMULATED]` marker in each log header. Two install attempts on 2026-08-12
+left the package still absent (`dpkg-query` reports not-installed, no
+`/usr/bin/qemu-aarch64`, no handler registered), so the run was deferred
+rather than faked.
 
 Current state, for anyone checking: `podman pull --platform linux/arm64` works
 and the image is on disk, but running it fails with `exec container process
