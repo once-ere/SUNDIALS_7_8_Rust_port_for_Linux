@@ -31,12 +31,21 @@ result is toolchain-stable as well.
 Checking that claim yourself:
 
 ```bash
+# the three container runs
 for f in gate-*.txt; do
-  echo "$f"; sed -n '/variants reported DIFF here/,$p' "$f" | tail -n +2 | sort | md5sum
+  printf '%-28s ' "$f"
+  sed -n '/variants reported DIFF here/,$p' "$f" | tail -n +2 |
+    grep -v '^[[:space:]]*$' | LC_ALL=C sort | md5sum
 done
+# the host run, whose file is a full gate summary rather than a container log
+printf '%-28s ' '(host)'
+grep 'DIFF(' summary-ubuntu-2604-glibc243.txt | awk '{print $1, $2}' |
+  LC_ALL=C sort | md5sum
 ```
 
-All four digests match.
+All four print `6581e4918e5ab2c71ee6354f383a0f34`. The host is extracted
+differently because its file is the raw `logs/summary.txt`, not a container
+log — `gate-*.txt` alone would only cover three of the four.
 
 **2. It cost eight reference matches, on every host.** 153 became 145 on all
 four, not just on Arch. The eight that flipped from IDENTICAL to DIFF
