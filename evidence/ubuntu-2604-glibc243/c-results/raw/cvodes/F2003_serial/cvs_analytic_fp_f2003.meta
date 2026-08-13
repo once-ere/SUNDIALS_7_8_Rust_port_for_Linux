@@ -1,5 +1,5 @@
 example:  cvs_analytic_fp_f2003
-source:   examples/cvodes/F2003_serial/cvs_analytic_fp_f2003.c
+source:   examples/cvodes/F2003_serial/cvs_analytic_fp_f2003.f90
 binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c/examples/cvodes/F2003_serial/cvs_analytic_fp_f2003
 argv:     
 launcher: <direct>

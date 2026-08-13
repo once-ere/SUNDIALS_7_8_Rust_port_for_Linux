@@ -9,13 +9,12 @@ oracle: built with libquadmath (accuracy in ulp will be reported)
 
 oracle corpora written to logs/oracle (24 files)
 
-   Compiling sundials_core v7.8.0 (/home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/crates/sundials_core)
-    Finished `release` profile [optimized] target(s) in 1.64s
+    Finished `release` profile [optimized] target(s) in 0.00s
      Running unittests src/lib.rs (target/release/deps/sundials_core-0b27a1a83889328f)
 
 running 6 tests
-test sundials_libm::tests::libm_huge_argument_reduction ... ok
 test sundials_libm::tests::libm_special_values ... ok
+test sundials_libm::tests::libm_huge_argument_reduction ... ok
 test sundials_libm::tests::libm_identities ... ok
    exp domain n=1000000   rust==host 1000000   (100.0000%)  max|err| rust 0.5071 ulp, host 0.5071 ulp
    exp wide   n=1000000   rust==host 1000000   (100.0000%)  max|err| rust 0.5053 ulp, host 0.5053 ulp
@@ -31,8 +30,8 @@ test sundials_libm::tests::libm_differential_arm_lineage ... ok
    cos wide   n=1000000   rust==host 998973    (99.8973%)  max|err| rust 0.5000 ulp, host 0.5148 ulp
  log1p wide   n=1000000   rust==host 991515    (99.1515%)  max|err| rust 0.5000 ulp, host 0.7783 ulp
   atan domain n=1000000   rust==host 998415    (99.8415%)  max|err| rust 0.5000 ulp, host 0.5162 ulp
-  sinh domain n=1000000   rust==host 991562    (99.1562%)  max|err| rust 0.5000 ulp, host 1.4948 ulp
   atan wide   n=1000000   rust==host 999680    (99.9680%)  max|err| rust 0.5000 ulp, host 0.5185 ulp
+  sinh domain n=1000000   rust==host 991562    (99.1562%)  max|err| rust 0.5000 ulp, host 1.4948 ulp
   sinh wide   n=1000000   rust==host 718427    (71.8427%)  max|err| rust 0.5000 ulp, host 1.7848 ulp
   asin domain n=1000000   rust==host 998454    (99.8454%)  max|err| rust 0.5000 ulp, host 0.5130 ulp
   asin wide   n=1000000   rust==host 998385    (99.8385%)  max|err| rust 0.5000 ulp, host 0.5042 ulp
@@ -45,7 +44,7 @@ test sundials_libm::tests::libm_differential_correctly_rounded ... ok
  acosh wide   n=1000000   rust==host 1000000   (100.0000%)  max|err| rust 0.5000 ulp, host 0.5000 ulp
 test sundials_libm::tests::libm_differential_dd_derived ... ok
 
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 25 filtered out; finished in 2.02s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 2.00s
 
 
 == end ==

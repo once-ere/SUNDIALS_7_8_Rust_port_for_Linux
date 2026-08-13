@@ -5,6 +5,6 @@ binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/
 argv:     
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/rust-run/cvodes/serial/cvsDiurnal_kry
 exit:     0 (OK)
-seconds:  0.106
+seconds:  0.105
 stdout:   2860 bytes, sha256 175cd73d3f78930b1c7df415f9901b7c8a8b8ddf99ee2fe118eacea4d255d40a
 stderr:   0 bytes

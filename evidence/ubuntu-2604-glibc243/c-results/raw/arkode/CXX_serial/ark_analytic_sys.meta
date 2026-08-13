@@ -1,5 +1,5 @@
 example:  ark_analytic_sys
-source:   examples/arkode/CXX_serial/ark_analytic_sys.c
+source:   examples/arkode/CXX_serial/ark_analytic_sys.cpp
 binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c/examples/arkode/CXX_serial/ark_analytic_sys
 argv:     
 launcher: <direct>

@@ -12,7 +12,7 @@ filtered, rounded or edited.
 
 | item | value |
 |---|---|
-| generated | 2026-08-13 01:18:59 UTC |
+| generated | 2026-08-13 01:33:18 UTC |
 | operating system | Ubuntu 26.04 LTS |
 | kernel / platform | Linux-7.0.0-29-generic-x86_64-with-glibc2.43 |
 | architecture | x86_64 |
@@ -79,17 +79,30 @@ against `sha256sum ... | cut -c1-16`.
 
 ## Run-to-run reproducibility
 
-The whole pipeline was executed three times on this machine. The
-captured `.stdout` files were compared between runs with git, which is
-a byte comparison. One caveat first: the three runs were not runs of
-the same build. KLU only became usable in run 2, so the eleven `*_klu`
-serial variants have two-run evidence where the other 179 have three.
+The whole pipeline has been executed four times on this machine, and
+the captured `.stdout` files compared between runs with git — a byte
+comparison, not a tolerance. The strongest single statement, and the
+one anyone can re-check, is about the most recent re-run: it rebuilt
+the C library and all 233 example binaries from source, re-ran every
+variant on both sides, and **every capture in the compared set came
+back byte-identical to the committed one** — 190 C, 199 Rust, 0 diffs.
+
+```bash
+tools/c_build.sh && tools/c_examples_run.sh && tools/rust_examples_run.sh
+git status --porcelain c-results rust-results   # only .meta timings should move
+```
+
+The earlier runs are weaker evidence for part of the set: the four runs
+were not runs of the same build, because KLU only became usable partway
+through, so the eleven `*_klu` serial variants have fewer repetitions
+behind them than the other 179.
 
 | set | variants | reproduced byte for byte |
 |---|---:|---|
 | the six *serial* directories (the compared set) | 190 | **all of them** |
 | every Rust example (`rust-results/`) | 199 | **all of them** |
-| `*/C_openmp` and `*/F2003_openmp` | 11 | 6 of them differ between runs |
+| `*/C_openmp` and `*/F2003_openmp` | 11 | up to 6 differ between runs |
+| `*/*parallel` (MPI) | 52 | 1 reorders between runs |
 
 The 6 that move are OpenMP examples run with a thread count as argv: `ark_heat1D_omp 4`, `idaFoodWeb_kry_omp 4`, `idasFoodWeb_kry_omp 4`, `kinFoodWeb_kry_omp 4`, `idaHeat2D_kry_omp_f2003 4`, `idaHeat2D_kry_omp_f2003 8`. This is expected and is not a defect in anything: an OpenMP
 reduction sums partial results in whatever order the threads finish, so
@@ -98,9 +111,16 @@ inside an iterative solver that changes the iteration counts. Compare
 `kinFoodWeb_kry_omp 4`, which reported `nni = 7, nli = 229` on one run
 and `nni = 10, nli = 378` on the next.
 
-None of the 6 is in the compared set, so `differences/` is
-unaffected. It is recorded here because a reader is entitled to know which
-numbers in this directory are stable and which are not.
+The MPI case is a different animal and worth separating, because it
+looks alarming and is not: `kin_diagon_kry_f2003` runs under `mpirun
+-np 4`, and between runs its 47 lines come out in a **different order**
+with every number identical -- four ranks writing to one stream, not a
+different answer. `sort`ing both captures makes them equal. The OpenMP
+movers are the real nondeterminism: there the numbers themselves change.
+
+None of these is in the compared set, so `differences/` is unaffected.
+It is recorded here because a reader is entitled to know which numbers
+in this directory are stable and which are not.
 
 ## Per-solver tables (serial examples — these are the ones with a Rust counterpart)
 

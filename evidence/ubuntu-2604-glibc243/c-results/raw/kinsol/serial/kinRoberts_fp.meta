@@ -5,6 +5,6 @@ argv:
 launcher: <direct>
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/kinsol/serial/kinRoberts_fp
 exit:     0 (OK)
-seconds:  0.205
+seconds:  0.206
 stdout:   546 bytes, sha256 aad4d127168471e796d1980d3767bc2d69eb8ebb233c640c1866a523aeddd861
 stderr:   0 bytes

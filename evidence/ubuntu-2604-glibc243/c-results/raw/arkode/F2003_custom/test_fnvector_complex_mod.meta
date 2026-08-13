@@ -1,5 +1,5 @@
 example:  test_fnvector_complex_mod
-source:   examples/arkode/F2003_custom/test_fnvector_complex_mod.c
+source:   examples/arkode/F2003_custom/test_fnvector_complex_mod.f90
 binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c/examples/arkode/F2003_custom/test_fnvector_complex_mod
 argv:     
 launcher: <direct>

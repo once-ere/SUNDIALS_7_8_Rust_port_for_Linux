@@ -1,5 +1,5 @@
 example:  ark_heat2D
-source:   examples/arkode/CXX_serial/ark_heat2D.c
+source:   examples/arkode/CXX_serial/ark_heat2D.cpp
 binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c/examples/arkode/CXX_serial/ark_heat2D
 argv:     
 launcher: <direct>

@@ -1,5 +1,5 @@
 example:  cv_brusselator_dns_f2003
-source:   examples/cvode/F2003_serial/cv_brusselator_dns_f2003.c
+source:   examples/cvode/F2003_serial/cv_brusselator_dns_f2003.f90
 binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c/examples/cvode/F2003_serial/cv_brusselator_dns_f2003
 argv:     
 launcher: <direct>

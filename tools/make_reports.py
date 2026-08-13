@@ -242,9 +242,11 @@ def write_c(p):
     n_rust = len(read_index(R_DIR / "index.tsv")) if (R_DIR / "index.tsv").exists() else 0
     omp_dirs = sorted(d for d in by_dir if d.endswith(("C_openmp", "F2003_openmp")))
     n_omp = sum(len(by_dir[d]) for d in omp_dirs)
-    # observed by running the whole pipeline three times and diffing the
-    # captures with git; not derivable from a single run, so it is named
-    # explicitly rather than counted
+    # Observed by running the whole pipeline four times and diffing the
+    # captures with git. Not derivable from a single run, so it is named
+    # explicitly rather than counted -- and the set is not fixed: on the
+    # fourth run `ark_heat1D_omp 4` reproduced and a *parallel* example moved
+    # instead. Any given run sees a subset.
     OMP_MOVERS = [
         "ark_heat1D_omp 4",
         "idaFoodWeb_kry_omp 4",
@@ -253,7 +255,9 @@ def write_c(p):
         "idaHeat2D_kry_omp_f2003 4",
         "idaHeat2D_kry_omp_f2003 8",
     ]
+    MPI_MOVERS = ["kin_diagon_kry_f2003 (mpirun -np 4)"]
     n_other_serial = sum(len(by_dir[d]) for d in other if "serial" in d)
+    n_mpi = sum(len(by_dir[d]) for d in by_dir if d.endswith("parallel"))
     failed = internal_failures(rows, C_DIR / "raw")
 
     doc = [
@@ -337,18 +341,32 @@ def write_c(p):
         "",
         "## Run-to-run reproducibility",
         "",
-        "The whole pipeline was executed three times on this machine. The",
-        "captured `.stdout` files were compared between runs with git, which is",
-        "a byte comparison. One caveat first: the three runs were not runs of",
-        "the same build. KLU only became usable in run 2, so the eleven `*_klu`",
-        "serial variants have two-run evidence where the other 179 have three.",
+        "The whole pipeline has been executed four times on this machine, and",
+        "the captured `.stdout` files compared between runs with git — a byte",
+        "comparison, not a tolerance. The strongest single statement, and the",
+        "one anyone can re-check, is about the most recent re-run: it rebuilt",
+        "the C library and all 233 example binaries from source, re-ran every",
+        "variant on both sides, and **every capture in the compared set came",
+        "back byte-identical to the committed one** — 190 C, 199 Rust, 0 diffs.",
+        "",
+        "```bash",
+        "tools/c_build.sh && tools/c_examples_run.sh && tools/rust_examples_run.sh",
+        "git status --porcelain c-results rust-results   # only .meta timings should move",
+        "```",
+        "",
+        "The earlier runs are weaker evidence for part of the set: the four runs",
+        "were not runs of the same build, because KLU only became usable partway",
+        "through, so the eleven `*_klu` serial variants have fewer repetitions",
+        "behind them than the other 179.",
         "",
         "| set | variants | reproduced byte for byte |",
         "|---|---:|---|",
         f"| the six *serial* directories (the compared set) | {n_serial} | **all of them** |",
         f"| every Rust example (`rust-results/`) | {n_rust} | **all of them** |",
         f"| `*/C_openmp` and `*/F2003_openmp` | {n_omp} | "
-        f"{len(OMP_MOVERS)} of them differ between runs |",
+        f"up to {len(OMP_MOVERS)} differ between runs |",
+        f"| `*/*parallel` (MPI) | {n_mpi} | "
+        f"{len(MPI_MOVERS)} reorders between runs |",
         "",
         f"The {len(OMP_MOVERS)} that move are OpenMP examples run with a thread count as argv: "
         + ", ".join(f"`{v}`" for v in OMP_MOVERS)
@@ -359,9 +377,16 @@ def write_c(p):
         "`kinFoodWeb_kry_omp 4`, which reported `nni = 7, nli = 229` on one run",
         "and `nni = 10, nli = 378` on the next.",
         "",
-        f"None of the {len(OMP_MOVERS)} is in the compared set, so `differences/` is",
-        "unaffected. It is recorded here because a reader is entitled to know which",
-        "numbers in this directory are stable and which are not.",
+        "The MPI case is a different animal and worth separating, because it",
+        "looks alarming and is not: `kin_diagon_kry_f2003` runs under `mpirun",
+        "-np 4`, and between runs its 47 lines come out in a **different order**",
+        "with every number identical -- four ranks writing to one stream, not a",
+        "different answer. `sort`ing both captures makes them equal. The OpenMP",
+        "movers are the real nondeterminism: there the numbers themselves change.",
+        "",
+        "None of these is in the compared set, so `differences/` is unaffected.",
+        "It is recorded here because a reader is entitled to know which numbers",
+        "in this directory are stable and which are not.",
         "",
         "## Per-solver tables (serial examples — these are the ones with a Rust counterpart)",
         "",

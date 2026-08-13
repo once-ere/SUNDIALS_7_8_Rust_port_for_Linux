@@ -1,5 +1,5 @@
 example:  ark_bruss1D_FEM_klu_f2003
-source:   examples/arkode/F2003_serial/ark_bruss1D_FEM_klu_f2003.c
+source:   examples/arkode/F2003_serial/ark_bruss1D_FEM_klu_f2003.f90
 binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c/examples/arkode/F2003_serial/ark_bruss1D_FEM_klu_f2003
 argv:     
 launcher: <direct>

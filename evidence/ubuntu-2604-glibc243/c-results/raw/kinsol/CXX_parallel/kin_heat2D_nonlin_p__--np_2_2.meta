@@ -1,5 +1,5 @@
 example:  kin_heat2D_nonlin_p
-source:   examples/kinsol/CXX_parallel/kin_heat2D_nonlin_p.c
+source:   examples/kinsol/CXX_parallel/kin_heat2D_nonlin_p.cpp
 binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c/examples/kinsol/CXX_parallel/kin_heat2D_nonlin_p
 argv:     --np 2 2
 launcher: mpirun --oversubscribe -np 4

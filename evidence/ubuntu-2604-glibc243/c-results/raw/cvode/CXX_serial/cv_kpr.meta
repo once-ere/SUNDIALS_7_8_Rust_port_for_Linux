@@ -1,5 +1,5 @@
 example:  cv_kpr
-source:   examples/cvode/CXX_serial/cv_kpr.c
+source:   examples/cvode/CXX_serial/cv_kpr.cpp
 binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c/examples/cvode/CXX_serial/cv_kpr
 argv:     
 launcher: <direct>
