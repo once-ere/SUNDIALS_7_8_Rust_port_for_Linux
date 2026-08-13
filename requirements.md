@@ -242,6 +242,44 @@ be usable as soon as CUDA is.
 | **SuperLU_MT** | not in the Ubuntu archive at any version; upstream ships source only | 10 `*_sps` / `*_slu` example programs cannot be built — the 9 in the serial directories plus `arkode/C_superlu-mt/ark_brusselator1D_FEM_slu`. The 9 serial ones are exactly the 9 variants the Rust port does not translate, so no comparison is lost. |
 | **Ginkgo, RAJA, XBraid, oneMKL** | not in the Ubuntu archive | 11 GPU / parallel-framework example programs cannot be built, across `cvode/ginkgo`, `cvode/raja`, `ida/raja`, `ida/mpiraja`, `arkode/CXX_xbraid`, `cvode/CXX_onemkl` and `cvode/CXX_sycl`. None has a serial Rust counterpart. |
 
+## 4a. Cross-architecture verification — blocked, one `apt` away
+
+Every measurement in this repository is **x86-64**. The reference gate has
+been run on six hosts and two libcs (`evidence/purerust-libm-gate/` upstream),
+but all six are x86-64 containers on an x86-64 machine. **arm64 is the one
+platform claim still resting on argument rather than measurement**, and the
+argument is decent — the crate tree is `std`-only with no `cfg(target_arch)`,
+and the pure-Rust libm is built on `sqrt`, `mul_add` and integer arithmetic,
+all exactly specified by IEEE-754 — but an argument is not a gate run.
+
+Running it here needs user-mode emulation, which is not installed:
+
+| component | installed | candidate | what it unlocks |
+|---|---|---|---|
+| `qemu-user-binfmt` | **no** | 1:10.2.1+ds-1ubuntu3.2 | `podman run --platform linux/arm64`, hence `tools/gate_in_container.sh` on aarch64 |
+| `qemu-user` | **no** | 1:10.2.1+ds-1ubuntu3.2 | pulled in as a dependency |
+| `binfmt-support` | **no** | 2.2.2-8 | registers the aarch64 handler |
+| `qemu-user-static` | **no** | _(none on Ubuntu 26.04)_ | the usual package elsewhere; use `qemu-user-binfmt` here |
+
+```bash
+sudo apt install qemu-user-binfmt
+```
+
+Current state, for anyone checking: `podman pull --platform linux/arm64` works
+and the image is on disk, but running it fails with `exec container process
+/bin/uname: Exec format error`, and `/proc/sys/fs/binfmt_misc/` registers only
+`llvm-21-runtime` and `python3.14` — no `qemu-aarch64`.
+
+**A caveat worth reading before treating an emulated run as settled.** QEMU
+user-mode is not an arm64 CPU. For the operations this port depends on it
+should be bit-equivalent — IEEE-754 pins `sqrt` and fused multiply-add
+exactly, and QEMU implements them with softfloat to that specification — so a
+green emulated gate would be real evidence. It would still be weaker than a
+run on hardware, and should be labelled as emulated wherever it is reported.
+The failure mode it cannot rule out is a genuine aarch64 code-generation
+difference that QEMU happens to reproduce faithfully in the same wrong way,
+which is unlikely but not impossible.
+
 ## 5. Rust-side requirements
 
 The Rust workspace deliberately has **no dependencies at all** — no
