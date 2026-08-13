@@ -6,6 +6,15 @@
 cargo run --release -p cvode_rs --example <name> -- <argv>
 ```
 
+That reproduces every row marked `OK`. It does **not** work for a
+`NOT_PORTED` row: those examples have no `[[example]]` entry in any
+`Cargo.toml`, because no Rust translation exists.
+
+`seconds` is wall time **including harness overhead** — the runner
+brackets each example with two `date` subprocesses and a subshell, a
+floor of roughly 0.1 s. Treat it as a liveness signal, not a
+benchmark: most of these examples finish in under 10 ms.
+
 | # | example | argv | exit | status | seconds | stdout bytes | sha256 (first 16) | raw |
 |---:|---|---|---:|---|---:|---:|---|---|
 | 1 | `cvAdvDiff_bnd` | _(none)_ | 0 | OK | 0.105 | 848 | `2ea0937bb293ce55` | [stdout](../raw/cvode/serial/cvAdvDiff_bnd.stdout) · [meta](../raw/cvode/serial/cvAdvDiff_bnd.meta) |

@@ -5,10 +5,10 @@ arkode/C_serial	ark_KrylovDemo_prec	2	ark_KrylovDemo_prec__2	IDENTICAL	OK	OK
 arkode/C_serial	ark_advection_diffusion_reaction_splitting		ark_advection_diffusion_reaction_splitting	IDENTICAL	OK	OK					
 arkode/C_serial	ark_analytic		ark_analytic	IDENTICAL	OK	OK					
 arkode/C_serial	ark_analytic	arkode.scalar_tolerances 1e-6 1e-8 arkode.table_names ARKODE_ESDIRK547L2SA_7_4_5 ARKODE_ERK_NONE	ark_analytic__arkode.scalar_tolerances_1e-6_1e-8_arkode.table_names_ARKODE_ESDIRK547L2SA_7_4_5_ARKODE_ERK_NONE	IDENTICAL	OK	OK					
-arkode/C_serial	ark_analytic_lsrk		ark_analytic_lsrk	NUMERIC	OK	OK	7	41	2.818e-01	1873581158628234	line 40 field 0
-arkode/C_serial	ark_analytic_lsrk_domeigest		ark_analytic_lsrk_domeigest	NUMERIC	OK	OK	14	47	2.600e-01	2020902451812283	line 46 field 0
-arkode/C_serial	ark_analytic_lsrk_domeigest	arkid.dom_eig_est_init_preprocess_iters 1 sundomeigestimator.max_iters 1	ark_analytic_lsrk_domeigest__arkid.dom_eig_est_init_preprocess_iters_1_sundomeigestimator.max_iters_1	NUMERIC	OK	OK	14	47	5.995e-01	6205658242664437	line 46 field 0
-arkode/C_serial	ark_analytic_lsrk_varjac		ark_analytic_lsrk_varjac	NUMERIC	OK	OK	12	45	2.036e-01	1807600431283255	line 44 field 0
+arkode/C_serial	ark_analytic_lsrk		ark_analytic_lsrk	NUMERIC	OK	OK	7	40	2.818e-01	1873581158628234	line 40 field 0
+arkode/C_serial	ark_analytic_lsrk_domeigest		ark_analytic_lsrk_domeigest	NUMERIC	OK	OK	14	46	2.600e-01	2020902451812283	line 46 field 0
+arkode/C_serial	ark_analytic_lsrk_domeigest	arkid.dom_eig_est_init_preprocess_iters 1 sundomeigestimator.max_iters 1	ark_analytic_lsrk_domeigest__arkid.dom_eig_est_init_preprocess_iters_1_sundomeigestimator.max_iters_1	NUMERIC	OK	OK	14	46	5.995e-01	6205658242664437	line 46 field 0
+arkode/C_serial	ark_analytic_lsrk_varjac		ark_analytic_lsrk_varjac	NUMERIC	OK	OK	12	44	2.036e-01	1807600431283255	line 44 field 0
 arkode/C_serial	ark_analytic_mels		ark_analytic_mels	IDENTICAL	OK	OK					
 arkode/C_serial	ark_analytic_nonlin		ark_analytic_nonlin	IDENTICAL	OK	OK					
 arkode/C_serial	ark_analytic_partitioned	forcing	ark_analytic_partitioned__forcing	IDENTICAL	OK	OK					
@@ -55,7 +55,7 @@ arkode/C_serial	ark_kepler	--stepper SPRK --step-mode fixed --method ARKODE_SPRK
 arkode/C_serial	ark_kepler	--stepper SPRK --step-mode fixed --method ARKODE_SPRK_RUTH_3_3 --tf 50 --check-order --nout 1	ark_kepler__--stepper_SPRK_--step-mode_fixed_--method_ARKODE_SPRK_RUTH_3_3_--tf_50_--check-order_--nout_1	IDENTICAL	OK	OK					
 arkode/C_serial	ark_kepler	--stepper SPRK --step-mode fixed --method ARKODE_SPRK_YOSHIDA_6_8 --tf 50 --check-order --nout 1	ark_kepler__--stepper_SPRK_--step-mode_fixed_--method_ARKODE_SPRK_YOSHIDA_6_8_--tf_50_--check-order_--nout_1	IDENTICAL	OK	OK					
 arkode/C_serial	ark_kpr_mri	0 1 0.005	ark_kpr_mri__0_1_0.005	IDENTICAL	OK	OK					
-arkode/C_serial	ark_kpr_mri	10 4 0.001 -100 100 0.5 1	ark_kpr_mri__10_4_0.001_-100_100_0.5_1	NUMERIC	OK	OK	1	74	1.266e-03	9903520314283	line 43 field 4
+arkode/C_serial	ark_kpr_mri	10 4 0.001 -100 100 0.5 1	ark_kpr_mri__10_4_0.001_-100_100_0.5_1	NUMERIC	OK	OK	1	73	1.266e-03	9903520314283	line 43 field 4
 arkode/C_serial	ark_kpr_mri	11 2 0.001	ark_kpr_mri__11_2_0.001	IDENTICAL	OK	OK					
 arkode/C_serial	ark_kpr_mri	12 3 0.005	ark_kpr_mri__12_3_0.005	IDENTICAL	OK	OK					
 arkode/C_serial	ark_kpr_mri	13 4 0.01	ark_kpr_mri__13_4_0.01	IDENTICAL	OK	OK					
@@ -91,13 +91,13 @@ cvode/serial	cvKrylovDemo_ls	2	cvKrylovDemo_ls__2	IDENTICAL	OK	OK
 cvode/serial	cvKrylovDemo_prec		cvKrylovDemo_prec	IDENTICAL	OK	OK					
 cvode/serial	cvParticle_dns		cvParticle_dns	IDENTICAL	OK	OK					
 cvode/serial	cvPendulum_dns		cvPendulum_dns	IDENTICAL	OK	OK					
-cvode/serial	cvRoberts_block_klu		cvRoberts_block_klu	NUMERIC	OK	OK	6	23	2.500e-01	2251799813685248	line 21 field 1
+cvode/serial	cvRoberts_block_klu		cvRoberts_block_klu	NUMERIC	OK	OK	6	22	2.500e-01	2251799813685248	line 21 field 1
 cvode/serial	cvRoberts_dns		cvRoberts_dns	IDENTICAL	OK	OK					
 cvode/serial	cvRoberts_dnsL		cvRoberts_dnsL	IDENTICAL	OK	OK					
 cvode/serial	cvRoberts_dns_constraints		cvRoberts_dns_constraints	IDENTICAL	OK	OK					
 cvode/serial	cvRoberts_dns_negsol		cvRoberts_dns_negsol	IDENTICAL	OK	OK					
 cvode/serial	cvRoberts_dns_uw		cvRoberts_dns_uw	IDENTICAL	OK	OK					
-cvode/serial	cvRoberts_klu		cvRoberts_klu	NUMERIC	OK	OK	8	25	3.333e-01	2251799813685248	line 23 field 1
+cvode/serial	cvRoberts_klu		cvRoberts_klu	NUMERIC	OK	OK	8	24	3.333e-01	2251799813685248	line 23 field 1
 cvode/serial	cvRoberts_sps		cvRoberts_sps	NOT_PORTED	-	NOT_PORTED					no pure-Rust counterpart (KLU/SuperLU backend)
 cvode/serial	cvRocket_dns		cvRocket_dns	IDENTICAL	OK	OK					
 cvode/serial	cvVdp_auto_nls		cvVdp_auto_nls	IDENTICAL	OK	OK					
@@ -109,7 +109,7 @@ cvodes/serial	cvsAdvDiff_bndL		cvsAdvDiff_bndL	IDENTICAL	OK	OK
 cvodes/serial	cvsAnalytic_mels		cvsAnalytic_mels	IDENTICAL	OK	OK					
 cvodes/serial	cvsAnalytic_mels	cvodes.max_order 3	cvsAnalytic_mels__cvodes.max_order_3	IDENTICAL	OK	OK					
 cvodes/serial	cvsDirectDemo_ls		cvsDirectDemo_ls	IDENTICAL	OK	OK					
-cvodes/serial	cvsDiurnal_FSA_kry	-sensi sim t	cvsDiurnal_FSA_kry__-sensi_sim_t	NUMERIC	OK	OK	51	143	1.259e+00	9457732915887603712	line 79 field 0
+cvodes/serial	cvsDiurnal_FSA_kry	-sensi sim t	cvsDiurnal_FSA_kry__-sensi_sim_t	NUMERIC	OK	OK	51	142	1.259e+00	9457732915887603712	line 79 field 0
 cvodes/serial	cvsDiurnal_FSA_kry	-sensi stg t	cvsDiurnal_FSA_kry__-sensi_stg_t	IDENTICAL	OK	OK					
 cvodes/serial	cvsDiurnal_kry		cvsDiurnal_kry	IDENTICAL	OK	OK					
 cvodes/serial	cvsDiurnal_kry_bp		cvsDiurnal_kry_bp	IDENTICAL	OK	OK					
@@ -126,19 +126,19 @@ cvodes/serial	cvsParticle_dns		cvsParticle_dns	IDENTICAL	OK	OK
 cvodes/serial	cvsPendulum_dns		cvsPendulum_dns	IDENTICAL	OK	OK					
 cvodes/serial	cvsRoberts_ASAi_dns		cvsRoberts_ASAi_dns	IDENTICAL	OK	OK					
 cvodes/serial	cvsRoberts_ASAi_dns_constraints		cvsRoberts_ASAi_dns_constraints	IDENTICAL	OK	OK					
-cvodes/serial	cvsRoberts_ASAi_klu		cvsRoberts_ASAi_klu	NUMERIC	OK	OK	7	61	6.015e-02	387028092977152	line 33 field 0
+cvodes/serial	cvsRoberts_ASAi_klu		cvsRoberts_ASAi_klu	NUMERIC	OK	OK	7	60	6.015e-02	387028092977152	line 33 field 0
 cvodes/serial	cvsRoberts_ASAi_sps		cvsRoberts_ASAi_sps	NOT_PORTED	-	NOT_PORTED					no pure-Rust counterpart (KLU/SuperLU backend)
 cvodes/serial	cvsRoberts_FSA_dns_Switch		cvsRoberts_FSA_dns_Switch	IDENTICAL	OK	OK					
 cvodes/serial	cvsRoberts_FSA_dns	-sensi sim t	cvsRoberts_FSA_dns__-sensi_sim_t	IDENTICAL	OK	OK					
 cvodes/serial	cvsRoberts_FSA_dns	-sensi stg1 t	cvsRoberts_FSA_dns__-sensi_stg1_t	IDENTICAL	OK	OK					
 cvodes/serial	cvsRoberts_FSA_dns_constraints	-sensi stg1 t	cvsRoberts_FSA_dns_constraints__-sensi_stg1_t	IDENTICAL	OK	OK					
-cvodes/serial	cvsRoberts_FSA_klu	-sensi stg1 t	cvsRoberts_FSA_klu__-sensi_stg1_t	NUMERIC	OK	OK	1	88	5.464e-05	371382011785	line 76 field 2
+cvodes/serial	cvsRoberts_FSA_klu	-sensi stg1 t	cvsRoberts_FSA_klu__-sensi_stg1_t	NUMERIC	OK	OK	1	87	5.464e-05	371382011785	line 76 field 2
 cvodes/serial	cvsRoberts_FSA_sps	-sensi stg1 t	cvsRoberts_FSA_sps__-sensi_stg1_t	NOT_PORTED	-	NOT_PORTED					no pure-Rust counterpart (KLU/SuperLU backend)
 cvodes/serial	cvsRoberts_dns		cvsRoberts_dns	IDENTICAL	OK	OK					
 cvodes/serial	cvsRoberts_dnsL		cvsRoberts_dnsL	IDENTICAL	OK	OK					
 cvodes/serial	cvsRoberts_dns_constraints		cvsRoberts_dns_constraints	IDENTICAL	OK	OK					
 cvodes/serial	cvsRoberts_dns_uw		cvsRoberts_dns_uw	IDENTICAL	OK	OK					
-cvodes/serial	cvsRoberts_klu		cvsRoberts_klu	NUMERIC	OK	OK	8	25	3.333e-01	2251799813685248	line 23 field 1
+cvodes/serial	cvsRoberts_klu		cvsRoberts_klu	NUMERIC	OK	OK	8	24	3.333e-01	2251799813685248	line 23 field 1
 cvodes/serial	cvsRoberts_sps		cvsRoberts_sps	NOT_PORTED	-	NOT_PORTED					no pure-Rust counterpart (KLU/SuperLU backend)
 ida/serial	idaAnalytic_mels		idaAnalytic_mels	IDENTICAL	OK	OK					
 ida/serial	idaAnalytic_mels	ida.scalar_tolerances 1e-3 1e-8	idaAnalytic_mels__ida.scalar_tolerances_1e-3_1e-8	IDENTICAL	OK	OK					
@@ -166,16 +166,16 @@ idas/serial	idasKrylovDemo_ls		idasKrylovDemo_ls	IDENTICAL	OK	OK
 idas/serial	idasKrylovDemo_ls	1	idasKrylovDemo_ls__1	IDENTICAL	OK	OK					
 idas/serial	idasKrylovDemo_ls	2	idasKrylovDemo_ls__2	IDENTICAL	OK	OK					
 idas/serial	idasRoberts_ASAi_dns		idasRoberts_ASAi_dns	IDENTICAL	OK	OK					
-idas/serial	idasRoberts_ASAi_klu		idasRoberts_ASAi_klu	NUMERIC	OK	OK	3	38	9.098e-02	527765581332480	line 21 field 0
+idas/serial	idasRoberts_ASAi_klu		idasRoberts_ASAi_klu	NUMERIC	OK	OK	3	37	9.098e-02	527765581332480	line 21 field 0
 idas/serial	idasRoberts_ASAi_sps		idasRoberts_ASAi_sps	NOT_PORTED	-	NOT_PORTED					no pure-Rust counterpart (KLU/SuperLU backend)
 idas/serial	idasRoberts_FSA_dns	-sensi stg t	idasRoberts_FSA_dns__-sensi_stg_t	IDENTICAL	OK	OK					
-idas/serial	idasRoberts_FSA_klu	-sensi stg t	idasRoberts_FSA_klu__-sensi_stg_t	NUMERIC	OK	OK	34	118	5.720e-01	5500856673763328	line 58 field 2
+idas/serial	idasRoberts_FSA_klu	-sensi stg t	idasRoberts_FSA_klu__-sensi_stg_t	NUMERIC	OK	OK	34	117	5.720e-01	5500856673763328	line 58 field 2
 idas/serial	idasRoberts_FSA_sps	-sensi stg t	idasRoberts_FSA_sps__-sensi_stg_t	NOT_PORTED	-	NOT_PORTED					no pure-Rust counterpart (KLU/SuperLU backend)
 idas/serial	idasRoberts_dns		idasRoberts_dns	IDENTICAL	OK	OK					
 idas/serial	idasRoberts_klu		idasRoberts_klu	IDENTICAL	OK	OK					
 idas/serial	idasRoberts_sps		idasRoberts_sps	NOT_PORTED	-	NOT_PORTED					no pure-Rust counterpart (KLU/SuperLU backend)
-idas/serial	idasSlCrank_FSA_dns		idasSlCrank_FSA_dns	NUMERIC	OK	OK	8	39	1.000e+00	4607182418800017408	line 14 field 0
-idas/serial	idasSlCrank_dns		idasSlCrank_dns	NUMERIC	OK	OK	1	48	7.420e-13	5575	line 45 field 0
+idas/serial	idasSlCrank_FSA_dns		idasSlCrank_FSA_dns	NUMERIC	OK	OK	8	38	1.000e+00	4607182418800017408	line 14 field 0
+idas/serial	idasSlCrank_dns		idasSlCrank_dns	NUMERIC	OK	OK	1	47	7.420e-13	5575	line 45 field 0
 kinsol/serial	kinAnalytic_fp		kinAnalytic_fp	IDENTICAL	OK	OK					
 kinsol/serial	kinAnalytic_fp	--damping_fn	kinAnalytic_fp__--damping_fn	IDENTICAL	OK	OK					
 kinsol/serial	kinAnalytic_fp	--damping_fp 0.5	kinAnalytic_fp__--damping_fp_0.5	IDENTICAL	OK	OK					

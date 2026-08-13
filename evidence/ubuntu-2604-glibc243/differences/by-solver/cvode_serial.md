@@ -16,13 +16,13 @@
 | 12 | `cvKrylovDemo_prec` | _(none)_ | IDENTICAL | — | — | — | — |
 | 13 | `cvParticle_dns` | _(none)_ | IDENTICAL | — | — | — | — |
 | 14 | `cvPendulum_dns` | _(none)_ | IDENTICAL | — | — | — | — |
-| 15 | `cvRoberts_block_klu` | _(none)_ | NUMERIC | 6 / 23 | 2.500e-01 | 2251799813685248 | [diff](../diffs/cvode/serial/cvRoberts_block_klu.diff) |
+| 15 | `cvRoberts_block_klu` | _(none)_ | NUMERIC | 6 / 22 | 2.500e-01 | 2251799813685248 | [diff](../diffs/cvode/serial/cvRoberts_block_klu.diff) |
 | 16 | `cvRoberts_dns` | _(none)_ | IDENTICAL | — | — | — | — |
 | 17 | `cvRoberts_dnsL` | _(none)_ | IDENTICAL | — | — | — | — |
 | 18 | `cvRoberts_dns_constraints` | _(none)_ | IDENTICAL | — | — | — | — |
 | 19 | `cvRoberts_dns_negsol` | _(none)_ | IDENTICAL | — | — | — | — |
 | 20 | `cvRoberts_dns_uw` | _(none)_ | IDENTICAL | — | — | — | — |
-| 21 | `cvRoberts_klu` | _(none)_ | NUMERIC | 8 / 25 | 3.333e-01 | 2251799813685248 | [diff](../diffs/cvode/serial/cvRoberts_klu.diff) |
+| 21 | `cvRoberts_klu` | _(none)_ | NUMERIC | 8 / 24 | 3.333e-01 | 2251799813685248 | [diff](../diffs/cvode/serial/cvRoberts_klu.diff) |
 | 22 | `cvRoberts_sps` | _(none)_ | NOT_PORTED | — | — | — | — |
 | 23 | `cvRocket_dns` | _(none)_ | IDENTICAL | — | — | — | — |
 | 24 | `cvVdp_auto_nls` | _(none)_ | IDENTICAL | — | — | — | — |

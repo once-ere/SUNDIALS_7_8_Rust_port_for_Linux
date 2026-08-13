@@ -92,6 +92,15 @@ def numbers(line):
 def classify(ctext, rtext):
     if ctext == rtext:
         return "IDENTICAL", {}
+
+    # A capture ends with a newline, so splitting on "\n" yields a phantom
+    # empty final element and every total_lines was one too high (48 reported
+    # for a 47-line file). Strip exactly one trailing newline, not all of
+    # them -- a genuine difference in trailing blank lines must still show up.
+    ctext = ctext[:-1] if ctext.endswith("\n") else ctext
+    rtext = rtext[:-1] if rtext.endswith("\n") else rtext
+    if ctext == rtext:
+        return "IDENTICAL", {}
     # whitespace-insensitive: collapse runs of blanks, drop trailing blanks
     def squash(t):
         return "\n".join(re.sub(r"[ \t]+", " ", ln).rstrip() for ln in t.split("\n"))
@@ -128,6 +137,15 @@ def classify(ctext, rtext):
                 worst_at = (i, j, a, b)
             if u is not None and u > worst_ulp:
                 worst_ulp = u
+    if worst_at is None:
+        # Same skeleton, same numeric fields, same values, yet the bytes
+        # differ: the difference is in formatting the numbers, not in the
+        # numbers. Calling that NUMERIC would overstate it.
+        return "FORMATTING", {
+            "reason": "numeric values all equal; the printed form differs",
+            "diff_lines": ndiff_lines,
+            "total_lines": len(clines),
+        }
     return "NUMERIC", {
         "diff_lines": ndiff_lines,
         "total_lines": len(clines),

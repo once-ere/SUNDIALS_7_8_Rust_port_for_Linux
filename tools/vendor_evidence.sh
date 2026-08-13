@@ -46,6 +46,15 @@ done
 # the results keeps that link correct without rewriting it.
 [ -f "$SRC/requirements.md" ] && cp "$SRC/requirements.md" "$DEST/requirements.md"
 
+# The logs the documents cite by line number. requirements.md §3 attributes
+# each backend failure to a line of c_build.log, and ATTRIBUTION.md's ulp
+# table is read off libm_differential.log -- citations nobody can check if
+# the logs stay behind in the working repository, where /logs is gitignored.
+mkdir -p "$DEST/logs"
+for l in c_build.log libm_differential.log; do
+  [ -f "$SRC/logs/$l" ] && cp "$SRC/logs/$l" "$DEST/logs/$l"
+done
+
 # The three README.md files and ATTRIBUTION.md sit at evidence/<slug>/<dir>/,
 # so a link written as ../X when they lived at the source root now has to
 # reach up three levels. requirements.md is excluded — it was just vendored
@@ -56,7 +65,9 @@ import re
 import sys
 
 dest = pathlib.Path(sys.argv[1])
-KEEP = {"../requirements.md"}
+# ../requirements.md and ../logs/* are vendored one level up, which is
+# exactly where ../ points from the three result directories.
+KEEP_PREFIXES = ("../requirements.md", "../logs/")
 changed = 0
 for md in list(dest.glob("*/README.md")) + list(dest.glob("*/ATTRIBUTION.md")):
     text = md.read_text()
@@ -64,7 +75,7 @@ for md in list(dest.glob("*/README.md")) + list(dest.glob("*/ATTRIBUTION.md")):
     def fix(m):
         global changed
         target = m.group(1)
-        if target in KEEP or not target.startswith("../") or target.startswith("../../"):
+        if target.startswith(KEEP_PREFIXES) or not target.startswith("../") or target.startswith("../../"):
             return m.group(0)
         changed += 1
         return "](../../../" + target[3:] + ")"

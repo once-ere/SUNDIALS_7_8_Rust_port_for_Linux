@@ -232,6 +232,12 @@ def write_c(p):
     other = sorted(d for d in by_dir if d not in SOLVER_TITLE)
     n_ok = sum(1 for r in rows if r["status"] == "OK")
 
+    # how much of the upstream tree this run actually reached
+    up = ROOT / "upstream-c" / "examples"
+    if not up.exists():
+        up = ROOT / "examples"
+    n_upstream_dirs = len({q.relative_to(up) for q in up.glob("*/*") if q.is_dir()}) or len(by_dir)
+
     n_serial = sum(len(by_dir[d]) for d in serial)
     n_rust = len(read_index(R_DIR / "index.tsv")) if (R_DIR / "index.tsv").exists() else 0
     omp_dirs = sorted(d for d in by_dir if d.endswith(("C_openmp", "F2003_openmp")))
@@ -247,15 +253,22 @@ def write_c(p):
         "idaHeat2D_kry_omp_f2003 4",
         "idaHeat2D_kry_omp_f2003 8",
     ]
+    n_other_serial = sum(len(by_dir[d]) for d in other if "serial" in d)
     failed = internal_failures(rows, C_DIR / "raw")
 
     doc = [
-        "# c-results — every upstream C example, built and executed here",
+        "# c-results — every upstream C example this toolchain could build",
         "",
         "This directory records what the **unmodified upstream SUNDIALS 7.8.0",
         "C examples** actually printed on this machine. It is raw evidence:",
         "the `.stdout` files are the bytes the processes wrote, with nothing",
         "filtered, rounded or edited.",
+        "",
+        f"\"Every\" is scoped, and the scope is large: {len(rows)} variants came out of "
+        f"{len(by_dir)} of the upstream tree's {n_upstream_dirs} example directories. The other "
+        f"{n_upstream_dirs - len(by_dir)} produced nothing, because a backend they need is "
+        "missing or unusable here; every one is accounted for in",
+        "[`../requirements.md`](../requirements.md).",
         "",
         "## Provenance",
         "",
@@ -282,7 +295,9 @@ def write_c(p):
         "",
         "## Headline result",
         "",
-        f"**{len(rows)} (example, argv) variants were executed. {n_ok} exited 0.**",
+        f"**{len(rows)} (example, argv) variants were executed. {n_ok} exited 0"
+        + (f", and {len(rows) - len(failed)} also report a completed solve.**"
+           if failed else ".**"),
         "",
         "| status | variants |",
         "|---|---|",
@@ -316,11 +331,17 @@ def write_c(p):
         "sha256sum c-results/raw/cvode/serial/cvRoberts_dns.stdout",
         "```",
         "",
+        "The `.meta` file carries the full digest; `index.tsv` carries only its",
+        "**first 16 hex characters**, so compare against the `.meta` line or",
+        "against `sha256sum ... | cut -c1-16`.",
+        "",
         "## Run-to-run reproducibility",
         "",
         "The whole pipeline was executed three times on this machine. The",
         "captured `.stdout` files were compared between runs with git, which is",
-        "a byte comparison:",
+        "a byte comparison. One caveat first: the three runs were not runs of",
+        "the same build. KLU only became usable in run 2, so the eleven `*_klu`",
+        "serial variants have two-run evidence where the other 179 have three.",
         "",
         "| set | variants | reproduced byte for byte |",
         "|---|---:|---|",
@@ -379,9 +400,11 @@ def write_c(p):
     doc += [
         "## Other example families that were also built and run",
         "",
-        "These have no pure-Rust counterpart in this port (it is serial-only),",
-        "so they do not appear in `differences/`. They are recorded because the",
-        "instruction was to build and execute *all* examples.",
+        "These have no pure-Rust counterpart because the port translates only",
+        f"the six **C** serial directories -- {n_other_serial} of the {len(rows) - n_serial} rows "
+        "below are themselves serial, in C++ or Fortran, so parallelism is not",
+        "the reason. They do not appear in `differences/`, and are recorded",
+        "because the instruction was to build and execute *all* examples.",
         "",
         "| directory | variants | all exited 0 |",
         "|---|---|---|",
@@ -398,10 +421,15 @@ def write_c(p):
     BACKENDS = [
         ("KLU (SuiteSparse)", lambda r: "_klu" in r["example"]),
         ("SuperLU_MT", lambda r: r["example"].endswith(("_sps", "_slu"))),
-        ("MPI", lambda r: r["dir"].endswith("parallel")),
+        # counted from the launcher the run actually used, not the directory
+        # name: 63 runs go through mpirun, but only 52 sit in a *parallel dir
+        ("MPI", lambda r: (C_DIR / "raw" / r["dir"] / (r["variant"] + ".meta")).exists()
+         and "launcher: mpirun" in (C_DIR / "raw" / r["dir"] / (r["variant"] + ".meta")).read_text()),
         ("hypre", lambda r: "parhyp" in r["dir"]),
         ("PETSc", lambda r: "petsc" in r["dir"]),
-        ("LAPACK", lambda r: "lapack" in r["dir"]),
+        # the serial *L examples are the LAPACK ones; only 1 of the 5 is in a
+        # directory named for it
+        ("LAPACK", lambda r: "lapack" in r["dir"] or r["example"].endswith("L")),
         ("CUDA / RAJA / Kokkos / MAGMA / Ginkgo / SYCL / XBraid",
          lambda r: any(k in r["dir"] for k in
                        ("cuda", "raja", "kokkos", "magma", "ginkgo", "sycl", "xbraid", "onemkl"))),
@@ -471,8 +499,16 @@ def write_r(p):
         "# rust-results — every ported example, built and executed here",
         "",
         "This directory records what the **pure-Rust translations** of the",
-        "upstream serial examples printed on this machine. Same rules as",
-        "`c-results/`: the `.stdout` files are raw process output.",
+        "upstream serial examples printed on this machine. The rows of the",
+        "provenance table that matter here are the OS, the architecture and",
+        "`rustc`/`cargo`: these binaries link no C toolchain and call the host",
+        "libm for nothing. The C compiler rows are carried for comparison with",
+        "`c-results/`.",
+        "",
+        "Same rules as `c-results/`: the `.stdout` files are raw process",
+        "output -- for the",
+        "190 variants that ran. The 9 `NOT_PORTED` ones have empty placeholder",
+        "files, because no binary exists to run.",
         "",
         "## Provenance",
         "",
@@ -509,14 +545,22 @@ def write_r(p):
         "They need SuperLU_MT, a third-party sparse-direct **C** library that a",
         "port forbidding `unsafe`, FFI and external crates cannot call --  and",
         "that is not in the Ubuntu archive at any version, so the C side cannot",
-        "build them either. Nothing is lost by their absence.",
+        "build them either. **No comparison** is lost by their absence -- there",
+        "is no output on either side to compare. Whether the SuperLU_MT code",
+        "path itself would have exposed anything is not measured here and is",
+        "not claimed.",
         "",
-        "The 11 `*_klu` examples *are* ported. SUNDIALS' sparse solver wraps",
-        "KLU (LGPL, likewise unreachable), so they run on the independent",
+        "The 11 `*_klu` examples in these six serial directories *are* ported.",
+        "(15 `*_klu` variants exist across the whole C build; the 4 outside",
+        "these directories are out of the port's scope.) KLU itself is fully",
+        "available on this machine and the C side uses it -- it is unreachable",
+        "*from Rust*, which forbids FFI, not unreachable like SuperLU_MT. So",
+        "they run on the independent",
         "pure-Rust sparse LU in `crates/sundials_core/src/sundials_sparse_lu.rs`",
         "instead. Four of them still match the C byte for byte.",
         "",
-        "See [`../requirements.md`](../requirements.md) §3.",
+        "See [`../requirements.md`](../requirements.md) §1 and §4 for SuperLU_MT,",
+        "§6 for the KLU substitution.",
         "",
         "## What makes these runs reproducible",
         "",
@@ -560,6 +604,15 @@ def write_r(p):
             f"cargo run --release -p {crate} --example <name> -- <argv>",
             "```",
             "",
+            "That reproduces every row marked `OK`. It does **not** work for a",
+            "`NOT_PORTED` row: those examples have no `[[example]]` entry in any",
+            "`Cargo.toml`, because no Rust translation exists.",
+            "",
+            "`seconds` is wall time **including harness overhead** — the runner",
+            "brackets each example with two `date` subprocesses and a subshell, a",
+            "floor of roughly 0.1 s. Treat it as a liveness signal, not a",
+            "benchmark: most of these examples finish in under 10 ms.",
+            "",
             "| # | example | argv | exit | status | seconds | stdout bytes | sha256 (first 16) | raw |",
             "|---:|---|---|---:|---|---:|---:|---|---|",
         ]
@@ -584,6 +637,10 @@ def write_d(p):
     for r in rows:
         cls[r["class"]] += 1
 
+    ulps = sorted(int(r["worst_ulp"]) for r in rows
+                  if r["class"] == "NUMERIC" and r.get("worst_ulp", "").strip().isdigit())
+    worst_lo, worst_hi = (ulps[0], float(ulps[-1])) if ulps else (0, 0.0)
+
     comparable = sum(v for k, v in cls.items() if k not in ("NOT_PORTED", "NO_C_RUN"))
     ident = cls.get("IDENTICAL", 0)
 
@@ -605,10 +662,14 @@ def write_d(p):
     doc = [
         "# differences — C output versus Rust output, variant by variant",
         "",
-        "Every serial example was executed twice on this machine: once as the",
-        "upstream C binary (`c-results/`) and once as its pure-Rust translation",
-        "(`rust-results/`). This directory is the comparison of the two stdout",
-        "streams. Nothing here is asserted — every classification is computed by",
+        f"Every serial example with a pure-Rust translation — {comparable} variants — was",
+        "executed twice on this machine: once as the upstream C binary",
+        "(`c-results/`) and once as its translation (`rust-results/`). This",
+        f"directory is the comparison of the two stdout streams. A further "
+        f"{cls.get('NOT_PORTED', 0)} variants ran on **neither** side and are listed as "
+        "`NOT_PORTED`;",
+        "they are not a comparison that failed, they are a comparison that does",
+        "not exist. Nothing here is asserted — every classification is computed by",
         "[`../tools/compare_results.py`](../tools/compare_results.py) from the",
         "captured bytes.",
         "",
@@ -622,6 +683,7 @@ def write_d(p):
         "tools/c_build.sh && tools/c_examples_run.sh      # the C side",
         "tools/rust_examples_run.sh                       # the Rust side",
         "python3 tools/compare_results.py                 # the comparison",
+        "tools/ab_host_libm.sh                            # the host-libm control build",
         "python3 tools/make_reports.py                    # these documents",
         "```",
         "",
@@ -659,8 +721,16 @@ def write_d(p):
         "`worst rel` below is the largest relative difference between any pair of",
         "printed numbers, and `worst ulp` is the same pair measured in",
         "representable double steps. One ulp is the smallest difference two",
-        "doubles can have — it is the granularity of the format itself, not an",
-        "error in either program.",
+        "doubles can have — the granularity of the format itself, not an error",
+        "in either program.",
+        "",
+        "**Do not read the whole `worst ulp` column as last-bit noise.** These",
+        f"are the worst pair in each variant, and they range from {worst_lo} up to "
+        f"{worst_hi:.3g}",
+        "across the table below. A ulp distance only means \"almost equal\" when",
+        "it is small; the large values are two numbers that genuinely parted",
+        "company — for the largest, the pair has opposite signs, which makes the",
+        "ulp count meaningless and the relative difference the number to read.",
         "",
         "## Attribution",
         "",

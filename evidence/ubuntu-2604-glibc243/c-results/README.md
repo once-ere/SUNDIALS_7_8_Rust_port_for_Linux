@@ -1,15 +1,18 @@
-# c-results — every upstream C example, built and executed here
+# c-results — every upstream C example this toolchain could build
 
 This directory records what the **unmodified upstream SUNDIALS 7.8.0
 C examples** actually printed on this machine. It is raw evidence:
 the `.stdout` files are the bytes the processes wrote, with nothing
 filtered, rounded or edited.
 
+"Every" is scoped, and the scope is large: 337 variants came out of 45 of the upstream tree's 68 example directories. The other 23 produced nothing, because a backend they need is missing or unusable here; every one is accounted for in
+[`../requirements.md`](../requirements.md).
+
 ## Provenance
 
 | item | value |
 |---|---|
-| generated | 2026-08-13 01:03:17 UTC |
+| generated | 2026-08-13 01:18:59 UTC |
 | operating system | Ubuntu 26.04 LTS |
 | kernel / platform | Linux-7.0.0-29-generic-x86_64-with-glibc2.43 |
 | architecture | x86_64 |
@@ -43,7 +46,7 @@ on; anything it could not is listed in [`../requirements.md`](../requirements.md
 
 ## Headline result
 
-**337 (example, argv) variants were executed. 337 exited 0.**
+**337 (example, argv) variants were executed. 337 exited 0, and 336 also report a completed solve.**
 
 | status | variants |
 |---|---|
@@ -70,11 +73,17 @@ cat c-results/raw/cvode/serial/cvRoberts_dns.stdout    # what it printed
 sha256sum c-results/raw/cvode/serial/cvRoberts_dns.stdout
 ```
 
+The `.meta` file carries the full digest; `index.tsv` carries only its
+**first 16 hex characters**, so compare against the `.meta` line or
+against `sha256sum ... | cut -c1-16`.
+
 ## Run-to-run reproducibility
 
 The whole pipeline was executed three times on this machine. The
 captured `.stdout` files were compared between runs with git, which is
-a byte comparison:
+a byte comparison. One caveat first: the three runs were not runs of
+the same build. KLU only became usable in run 2, so the eleven `*_klu`
+serial variants have two-run evidence where the other 179 have three.
 
 | set | variants | reproduced byte for byte |
 |---|---:|---|
@@ -115,9 +124,10 @@ alone would read as though everything worked.
 
 ## Other example families that were also built and run
 
-These have no pure-Rust counterpart in this port (it is serial-only),
-so they do not appear in `differences/`. They are recorded because the
-instruction was to build and execute *all* examples.
+These have no pure-Rust counterpart because the port translates only
+the six **C** serial directories -- 63 of the 147 rows below are themselves serial, in C++ or Fortran, so parallelism is not
+the reason. They do not appear in `differences/`, and are recorded
+because the instruction was to build and execute *all* examples.
 
 | directory | variants | all exited 0 |
 |---|---|---|
@@ -172,10 +182,10 @@ exact `apt` command.
 |---|---:|---|
 | KLU (SuiteSparse) | 15 | **present** |
 | SuperLU_MT | 0 | absent |
-| MPI | 52 | **present** |
+| MPI | 63 | **present** |
 | hypre | 10 | **present** |
 | PETSc | 0 | absent |
-| LAPACK | 1 | **present** |
+| LAPACK | 5 | **present** |
 | CUDA / RAJA / Kokkos / MAGMA / Ginkgo / SYCL / XBraid | 0 | absent |
 
 The absent ones remove their example families from this run entirely --

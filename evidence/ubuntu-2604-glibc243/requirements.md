@@ -6,12 +6,17 @@ NVIDIA GeForce RTX 5090 Laptop GPU (driver 595.84, CUDA 13.1).
 Everything in `c-results/`, `rust-results/` and `differences/` was produced
 on this machine.
 
-Regenerate the probe table yourself at any time — it needs no root and
-installs nothing:
+Probe this machine yourself — it needs no root and installs nothing:
 
 ```bash
 tools/c_requirements.sh
 ```
+
+It does **not** regenerate §1: it prints four columns rather than five, has
+no pthreads row, and reports MAGMA as MISSING because its `have_lib` helper
+searches only `/usr/lib/x86_64-linux-gnu` while Ubuntu's MAGMA lives in
+`/usr/lib`. §1 below is maintained by hand against the build log, and the
+two disagree on that row.
 
 ---
 
@@ -31,7 +36,7 @@ can actually *use* them is a separate question, answered in §3.
 | libquadmath | yes | yes | the ulp figures in `LIBM.md` | ships with `gcc` |
 | BLAS / LAPACK | yes | yes | the `*_dnsL` / `*_bndL` examples | `libblas-dev` `liblapack-dev` |
 | MPI (OpenMPI) | yes | yes | `parallel`, `C_parallel`, `CXX_parallel`, `F2003_parallel` | `libopenmpi-dev` |
-| KLU (SuiteSparse) | yes | yes | the 11 `*_klu` examples | `libsuitesparse-dev` |
+| KLU (SuiteSparse) | yes | yes | 12 `*_klu` example programs, 15 argv variants | `libsuitesparse-dev` |
 | hypre | yes | yes | `parhyp`, `C_parhyp`, `CXX_parhyp` | `libhypre-dev` |
 | **PETSc** | yes | **no** — §3.1 | `petsc`, `C_petsc` | `petsc-dev` |
 | **SuperLU_DIST** | yes | **no** — §3.2 | `superludist`, `CXX_superludist` | `libsuperlu-dist-dev` |
@@ -39,11 +44,23 @@ can actually *use* them is a separate question, answered in §3.
 | **Trilinos (Tpetra)** | yes | **no** — §3.4 | `ida/trilinos` | `libtrilinos-tpetra-dev` + `libtrilinos-teuchos-dev` |
 | **CUDA 13.1 + RTX 5090** | yes | **no** — §3.5 | `cuda`, `mpicuda` | already installed |
 | **MAGMA** | yes | **no** — §3.6 | `cvode/magma` | `libmagma-dev` |
-| **SuperLU_MT** | **no** | no | the 9 `*_sps` / `*_slu` examples | _not packaged for Ubuntu_ |
+| **SuperLU_MT** | **no** | no | 10 `*_sps` / `*_slu` example programs | _not packaged for Ubuntu_ |
 | **Ginkgo** | **no** | no | `cvode/ginkgo` | _not packaged for Ubuntu_ |
 | **RAJA** | **no** | no | `*/raja`, `mpiraja` | _not packaged for Ubuntu_ |
 | **oneMKL / SYCL** | **no** | no | `CXX_onemkl`, `CXX_sycl` | _not packaged for Ubuntu_ |
 | **XBraid** | **no** | no | `arkode/CXX_xbraid` | _not packaged for Ubuntu_ |
+| **HIP / ROCm** | **no** | no | `cvode/hip` | _not installed_ |
+| **OpenMP device offload** | n/a | no | `*/C_openmpdev` | needs an offload-capable toolchain |
+
+23 of the upstream tree's 68 example directories produced no rows at all,
+holding 30 example source files between them. Every one is accounted for by
+a row above; `tools/cross_gate.py` is not involved here, but the list is
+reproducible:
+
+```bash
+comm -23 <(ls -d upstream-c/examples/*/*/ | sed 's|.*examples/||;s|/$||' | sort) \
+         <(awk -F'\t' 'NR>1{print $1}' c-results/index.tsv | sort -u)
+```
 
 ## 2. What was installed for this work
 
@@ -54,7 +71,9 @@ sudo apt install libopenmpi-dev libsuitesparse-dev libhypre-dev petsc-dev libsup
 Effect, measured: the C example build went from **164 binaries to 233**, and
 the executed variant set from 259 to the number in
 [`c-results/README.md`](c-results/README.md). MPI, KLU and hypre all became
-usable; the other four did not, for the reasons in §3.
+usable; the other five — PETSc, SuperLU_DIST, Trilinos, Kokkos and MAGMA —
+did not, for the reasons in §3. (Eight packages were installed, mapping to
+eight components; three worked.)
 
 `libtrilinos-teuchos-dev` was installed afterwards, on the evidence in
 §3.4. It removed the error it was diagnosed for, but did not make Trilinos
@@ -66,13 +85,35 @@ bug.
 
 `tools/c_build.sh` enables optional backends as a **ladder**: it tries the
 full set, then drops entries one at a time until CMake both configures and
-builds. The level that succeeded is printed and logged. Each diagnosis
-below was then confirmed by configuring that backend *in isolation*, so it
-is not an artefact of the ladder's drop order.
+builds. The level that succeeded is printed and logged. The set that works
+on this machine is **MPI + LAPACK + KLU + hypre** (`logs/c_build.log:7728`).
 
-The set that works on this machine is **MPI + LAPACK + KLU + hypre**.
+**How far each diagnosis below is evidence.** A ladder attributes a failure
+to whatever it dropped next, which is not the same as knowing what failed.
+Three of the six diagnoses quote text that is in the committed log, and
+three do not:
+
+| § | backend | quoted text in `logs/c_build.log`? |
+|---|---|---|
+| 3.1 | PETSc | **no** — inferred; that level failed on the Kokkos error (log:1040) |
+| 3.2 | SuperLU_DIST | yes, log:1689 |
+| 3.3 | Kokkos | yes, log:1483 and 5 more |
+| 3.4 | Trilinos | yes (Teuchos, then Kokkos again) |
+| 3.5 | CUDA | yes, log:290 |
+| 3.6 | MAGMA | **no** — inferred; that level failed on the CUDA error (log:213) |
+
+No isolation run is committed for any of them, so 3.1 and 3.6 are
+reasoned diagnoses rather than captured transcripts, and are marked as such
+below. Anyone wanting them upgraded to evidence should configure those two
+backends alone and commit the logs.
 
 ### 3.1 PETSc — index-width mismatch with SUNDIALS
+
+> **Diagnosis, not a transcript.** The recorded PETSc level failed on the
+> Kokkos error of §3.3 before any PETSc source was compiled, so the block
+> below is what this mismatch produces, read off
+> `src/sunnonlinsol/petscsnes/sunnonlinsol_petscsnes.c:352` and Ubuntu's
+> `petscconf.h` — it is not in `logs/c_build.log`.
 
 ```
 src/sunnonlinsol/petscsnes/sunnonlinsol_petscsnes.c:352:54: error:
@@ -117,8 +158,11 @@ but this file does not exist.
 
 `libkokkos-dev` 5.0.2-2 installs `libkokkoscore.so` and
 `libkokkoscontainers.so` and nothing else, yet its CMake config declares
-four `STATIC IMPORTED` targets — including `kokkosalgorithms` and
-`kokkossimd`, whose `.a` files exist nowhere on the system. In Kokkos 5.x
+five imported targets, and **two of them are `STATIC IMPORTED`** —
+`kokkosalgorithms` (`KokkosTargets.cmake:89`) and `kokkossimd` (`:97`) —
+whose `.a` files exist nowhere on the system. The other three are
+`kokkoscore` and `kokkoscontainers` (`SHARED`, and their `.so` files do
+exist) and the `kokkos` umbrella (`INTERFACE`). In Kokkos 5.x
 those components are header-only (`/usr/include/kokkos/Kokkos_StdAlgorithms.hpp`,
 `/usr/include/kokkos/std_algorithms/`), so the archives are not merely
 missing — they should not exist at all, and the packaged config is simply
@@ -150,9 +194,11 @@ CMake Error at .../cmake/Kokkos/KokkosTargets.cmake:130 (message):
 
 That is §3.3 again. `TrilinosConfig.cmake` lists `Kokkos` among its
 required components, and there is exactly one Kokkos CMake package on the
-system — the broken one. `libtrilinos-kokkos-dev` does not help: Trilinos
-16.1 resolves the component through
-`/usr/lib/x86_64-linux-gnu/cmake/Kokkos` either way.
+system — the broken one. `libtrilinos-kokkos-dev` is **not installed here and was not tried**, so
+this is an expectation rather than a result: Trilinos 16.1 resolves the
+component through `/usr/lib/x86_64-linux-gnu/cmake/Kokkos`, which is the
+broken config, and the runtime package that owns that directory
+(`libtrilinos-kokkos-16.1`) is already present.
 
 **So Trilinos is not fixable by installing packages on this machine.** It
 becomes usable only when the `libkokkos-dev` CMake config stops declaring
@@ -167,12 +213,20 @@ static targets for components Kokkos 5.x ships as header-only.
 ```
 
 The GPU and driver are fine — this fails during CMake's compiler
-identification, before any SUNDIALS code is reached. glibc 2.41 added
-`rsqrt` to `<math.h>`; CUDA 13.1's `crt/math_functions.h` declares it with
+identification, before any SUNDIALS code is reached. glibc **2.42** added
+`rsqrt` to `<math.h>` (its NEWS lists it under "Power and absolute-value
+functions: compoundn, pown, powr, rootn, rsqrt"; 2.43 only added AArch64
+vector variants); CUDA 13.1's `crt/math_functions.h` declares it with
 an incompatible exception specification. It needs a CUDA release that
 knows about the newer glibc; no build flag avoids it.
 
 ### 3.6 MAGMA — blocked by 3.5
+
+> **Diagnosis, not a transcript.** MAGMA was the first entry the ladder
+> dropped, and its level failed on the CUDA compiler-identification error of
+> §3.5 (`logs/c_build.log:213`) — SUNDIALS' own MAGMA logic was never
+> reached. The message below is what SUNDIALS emits once configuration gets
+> that far; it appears in no log in this repository.
 
 ```
 SUNDIALS_MAGMA_BACKENDS includes CUDA but CUDA is not enabled.
@@ -185,8 +239,8 @@ be usable as soon as CUDA is.
 
 | component | why | consequence |
 |---|---|---|
-| **SuperLU_MT** | not in the Ubuntu archive at any version; upstream ships source only | the 9 `*_sps` / `*_slu` examples cannot be built. They are also 9 of the 20 the Rust port does not translate, so no comparison is lost. |
-| **Ginkgo, RAJA, XBraid, oneMKL** | not in the Ubuntu archive | 8 GPU / parallel-framework examples cannot be built. None has a serial Rust counterpart. |
+| **SuperLU_MT** | not in the Ubuntu archive at any version; upstream ships source only | 10 `*_sps` / `*_slu` example programs cannot be built — the 9 in the serial directories plus `arkode/C_superlu-mt/ark_brusselator1D_FEM_slu`. The 9 serial ones are exactly the 9 variants the Rust port does not translate, so no comparison is lost. |
+| **Ginkgo, RAJA, XBraid, oneMKL** | not in the Ubuntu archive | 11 GPU / parallel-framework example programs cannot be built, across `cvode/ginkgo`, `cvode/raja`, `ida/raja`, `ida/mpiraja`, `arkode/CXX_xbraid`, `cvode/CXX_onemkl` and `cvode/CXX_sycl`. None has a serial Rust counterpart. |
 
 ## 5. Rust-side requirements
 
@@ -211,11 +265,26 @@ Optional, and only for regenerating documentation rather than for building:
 | `python3` + `mpmath` | independent cross-check of the libm tables | optional; `pip install mpmath` |
 | `libquadmath` (ships with gcc) | `tools/libm_oracle.c` | without it the differential still runs, but reports agreement only, not ulp accuracy |
 
-## 6. The one coverage gap
+## 6. The KLU gap, and what closed it
 
-The 11 `*_klu` examples now **build and run on the C side** but have no
-pure-Rust counterpart, because KLU is a third-party sparse-direct C library
-and this port forbids FFI. Closing that gap means implementing a sparse
-direct solver inside `sundials_core`. It is out of scope here and is
-recorded as a gap rather than papered over — see
-[`rust-results/README.md`](rust-results/README.md).
+This section used to record a coverage gap: the `*_klu` examples built on
+the C side and had no pure-Rust counterpart, because KLU is a third-party
+sparse-direct C library and this port forbids FFI. That gap is closed.
+
+`crates/sundials_core/src/sundials_sparse_lu.rs` implements a left-looking
+sparse LU (Gilbert & Peierls) with KLU's default threshold partial pivoting,
+under a faithful translation of SUNDIALS' own BSD-3 `sunlinsol_klu.c`.
+**All 11 `*_klu` examples in the six serial directories are ported and ran
+(11/11 exit 0); 4 are byte-identical to the C.**
+
+What replaced the gap is not nothing, and it is worth stating plainly: a
+**second substitution of third-party numerics**, alongside the libm. The
+libm substitution has a control build (`--features host-libm`) that
+attributes its divergences; this one cannot have, because there is no KLU to
+switch back to. The 7 `*_klu` variants that differ numerically are therefore
+attributed by direct verification of the replacement solver rather than by
+A/B — see [`differences/ATTRIBUTION.md`](differences/ATTRIBUTION.md).
+
+The 15 `*_klu` argv variants outside those six directories (`arkode/C_klu`
+and the three `*_klu_f2003`) build and run on the C side and are **not**
+ported: the port covers only the C serial directories.

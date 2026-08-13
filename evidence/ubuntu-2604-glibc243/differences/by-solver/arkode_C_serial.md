@@ -8,10 +8,10 @@
 | 4 | `ark_advection_diffusion_reaction_splitting` | _(none)_ | IDENTICAL | — | — | — | — |
 | 5 | `ark_analytic` | _(none)_ | IDENTICAL | — | — | — | — |
 | 6 | `ark_analytic` | `arkode.scalar_tolerances 1e-6 1e-8 arkode.table_names ARKODE_ESDIRK547L2SA_7_4_5 ARKODE_ERK_NONE` | IDENTICAL | — | — | — | — |
-| 7 | `ark_analytic_lsrk` | _(none)_ | NUMERIC | 7 / 41 | 2.818e-01 | 1873581158628234 | [diff](../diffs/arkode/C_serial/ark_analytic_lsrk.diff) |
-| 8 | `ark_analytic_lsrk_domeigest` | _(none)_ | NUMERIC | 14 / 47 | 2.600e-01 | 2020902451812283 | [diff](../diffs/arkode/C_serial/ark_analytic_lsrk_domeigest.diff) |
-| 9 | `ark_analytic_lsrk_domeigest` | `arkid.dom_eig_est_init_preprocess_iters 1 sundomeigestimator.max_iters 1` | NUMERIC | 14 / 47 | 5.995e-01 | 6205658242664437 | [diff](../diffs/arkode/C_serial/ark_analytic_lsrk_domeigest__arkid.dom_eig_est_init_preprocess_iters_1_sundomeigestimator.max_iters_1.diff) |
-| 10 | `ark_analytic_lsrk_varjac` | _(none)_ | NUMERIC | 12 / 45 | 2.036e-01 | 1807600431283255 | [diff](../diffs/arkode/C_serial/ark_analytic_lsrk_varjac.diff) |
+| 7 | `ark_analytic_lsrk` | _(none)_ | NUMERIC | 7 / 40 | 2.818e-01 | 1873581158628234 | [diff](../diffs/arkode/C_serial/ark_analytic_lsrk.diff) |
+| 8 | `ark_analytic_lsrk_domeigest` | _(none)_ | NUMERIC | 14 / 46 | 2.600e-01 | 2020902451812283 | [diff](../diffs/arkode/C_serial/ark_analytic_lsrk_domeigest.diff) |
+| 9 | `ark_analytic_lsrk_domeigest` | `arkid.dom_eig_est_init_preprocess_iters 1 sundomeigestimator.max_iters 1` | NUMERIC | 14 / 46 | 5.995e-01 | 6205658242664437 | [diff](../diffs/arkode/C_serial/ark_analytic_lsrk_domeigest__arkid.dom_eig_est_init_preprocess_iters_1_sundomeigestimator.max_iters_1.diff) |
+| 10 | `ark_analytic_lsrk_varjac` | _(none)_ | NUMERIC | 12 / 44 | 2.036e-01 | 1807600431283255 | [diff](../diffs/arkode/C_serial/ark_analytic_lsrk_varjac.diff) |
 | 11 | `ark_analytic_mels` | _(none)_ | IDENTICAL | — | — | — | — |
 | 12 | `ark_analytic_nonlin` | _(none)_ | IDENTICAL | — | — | — | — |
 | 13 | `ark_analytic_partitioned` | `forcing` | IDENTICAL | — | — | — | — |
@@ -60,7 +60,7 @@
 | 56 | `ark_kpr_mri` | `0 1 0.005` | IDENTICAL | — | — | — | — |
 | 57 | `ark_kpr_mri` | `1 0 0.01` | IDENTICAL | — | — | — | — |
 | 58 | `ark_kpr_mri` | `1 1 0.002` | IDENTICAL | — | — | — | — |
-| 59 | `ark_kpr_mri` | `10 4 0.001 -100 100 0.5 1` | NUMERIC | 1 / 74 | 1.266e-03 | 9903520314283 | [diff](../diffs/arkode/C_serial/ark_kpr_mri__10_4_0.001_-100_100_0.5_1.diff) |
+| 59 | `ark_kpr_mri` | `10 4 0.001 -100 100 0.5 1` | NUMERIC | 1 / 73 | 1.266e-03 | 9903520314283 | [diff](../diffs/arkode/C_serial/ark_kpr_mri__10_4_0.001_-100_100_0.5_1.diff) |
 | 60 | `ark_kpr_mri` | `11 2 0.001` | IDENTICAL | — | — | — | — |
 | 61 | `ark_kpr_mri` | `12 3 0.005` | IDENTICAL | — | — | — | — |
 | 62 | `ark_kpr_mri` | `13 4 0.01` | IDENTICAL | — | — | — | — |

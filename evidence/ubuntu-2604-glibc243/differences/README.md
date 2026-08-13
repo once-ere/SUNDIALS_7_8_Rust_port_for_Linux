@@ -1,9 +1,11 @@
 # differences — C output versus Rust output, variant by variant
 
-Every serial example was executed twice on this machine: once as the
-upstream C binary (`c-results/`) and once as its pure-Rust translation
-(`rust-results/`). This directory is the comparison of the two stdout
-streams. Nothing here is asserted — every classification is computed by
+Every serial example with a pure-Rust translation — 190 variants — was
+executed twice on this machine: once as the upstream C binary
+(`c-results/`) and once as its translation (`rust-results/`). This
+directory is the comparison of the two stdout streams. A further 9 variants ran on **neither** side and are listed as `NOT_PORTED`;
+they are not a comparison that failed, they are a comparison that does
+not exist. Nothing here is asserted — every classification is computed by
 [`../tools/compare_results.py`](../../../tools/compare_results.py) from the
 captured bytes.
 
@@ -11,7 +13,7 @@ captured bytes.
 
 | item | value |
 |---|---|
-| generated | 2026-08-13 01:03:17 UTC |
+| generated | 2026-08-13 01:18:59 UTC |
 | operating system | Ubuntu 26.04 LTS |
 | kernel / platform | Linux-7.0.0-29-generic-x86_64-with-glibc2.43 |
 | architecture | x86_64 |
@@ -30,6 +32,7 @@ captured bytes.
 tools/c_build.sh && tools/c_examples_run.sh      # the C side
 tools/rust_examples_run.sh                       # the Rust side
 python3 tools/compare_results.py                 # the comparison
+tools/ab_host_libm.sh                            # the host-libm control build
 python3 tools/make_reports.py                    # these documents
 ```
 
@@ -66,8 +69,15 @@ cat differences/diffs/<dir>/<variant>.numbers
 `worst rel` below is the largest relative difference between any pair of
 printed numbers, and `worst ulp` is the same pair measured in
 representable double steps. One ulp is the smallest difference two
-doubles can have — it is the granularity of the format itself, not an
-error in either program.
+doubles can have — the granularity of the format itself, not an error
+in either program.
+
+**Do not read the whole `worst ulp` column as last-bit noise.** These
+are the worst pair in each variant, and they range from 5575 up to 9.46e+18
+across the table below. A ulp distance only means "almost equal" when
+it is small; the large values are two numbers that genuinely parted
+company — for the largest, the pair has opposite signs, which makes the
+ulp count meaningless and the relative difference the number to read.
 
 ## Attribution
 

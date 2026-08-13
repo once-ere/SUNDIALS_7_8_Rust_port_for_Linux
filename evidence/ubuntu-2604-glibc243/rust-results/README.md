@@ -1,14 +1,22 @@
 # rust-results — every ported example, built and executed here
 
 This directory records what the **pure-Rust translations** of the
-upstream serial examples printed on this machine. Same rules as
-`c-results/`: the `.stdout` files are raw process output.
+upstream serial examples printed on this machine. The rows of the
+provenance table that matter here are the OS, the architecture and
+`rustc`/`cargo`: these binaries link no C toolchain and call the host
+libm for nothing. The C compiler rows are carried for comparison with
+`c-results/`.
+
+Same rules as `c-results/`: the `.stdout` files are raw process
+output -- for the
+190 variants that ran. The 9 `NOT_PORTED` ones have empty placeholder
+files, because no binary exists to run.
 
 ## Provenance
 
 | item | value |
 |---|---|
-| generated | 2026-08-13 01:03:17 UTC |
+| generated | 2026-08-13 01:18:59 UTC |
 | operating system | Ubuntu 26.04 LTS |
 | kernel / platform | Linux-7.0.0-29-generic-x86_64-with-glibc2.43 |
 | architecture | x86_64 |
@@ -48,14 +56,22 @@ nothing needed to be.
 They need SuperLU_MT, a third-party sparse-direct **C** library that a
 port forbidding `unsafe`, FFI and external crates cannot call --  and
 that is not in the Ubuntu archive at any version, so the C side cannot
-build them either. Nothing is lost by their absence.
+build them either. **No comparison** is lost by their absence -- there
+is no output on either side to compare. Whether the SuperLU_MT code
+path itself would have exposed anything is not measured here and is
+not claimed.
 
-The 11 `*_klu` examples *are* ported. SUNDIALS' sparse solver wraps
-KLU (LGPL, likewise unreachable), so they run on the independent
+The 11 `*_klu` examples in these six serial directories *are* ported.
+(15 `*_klu` variants exist across the whole C build; the 4 outside
+these directories are out of the port's scope.) KLU itself is fully
+available on this machine and the C side uses it -- it is unreachable
+*from Rust*, which forbids FFI, not unreachable like SuperLU_MT. So
+they run on the independent
 pure-Rust sparse LU in `crates/sundials_core/src/sundials_sparse_lu.rs`
 instead. Four of them still match the C byte for byte.
 
-See [`../requirements.md`](../requirements.md) §3.
+See [`../requirements.md`](../requirements.md) §1 and §4 for SuperLU_MT,
+§6 for the KLU substitution.
 
 ## What makes these runs reproducible
 

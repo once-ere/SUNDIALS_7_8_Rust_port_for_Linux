@@ -126,7 +126,15 @@ for bin in "${BINS[@]}"; do
     sha=$(sha256sum "$RAW/$dir/$vid.stdout" | cut -c1-16)
     {
       echo "example:  $name"
-      echo "source:   examples/$dir/$name.c"
+      src="examples/$dir/$name.c"
+      for ext in c cpp f90 F90 cu; do
+        if [ -f "$WS/examples/$dir/$name.$ext" ] || [ -f "$WS/upstream-c/examples/$dir/$name.$ext" ]; then
+          src="examples/$dir/$name.$ext"; break
+        fi
+      done
+      # C++ and Fortran examples were previously all recorded as .c, which
+      # named a file that does not exist for 101 of the 337 runs.
+      echo "source:   $src"
       echo "binary:   $bin"
       echo "argv:     $args"
       echo "launcher: ${LAUNCH[*]:-<direct>}"

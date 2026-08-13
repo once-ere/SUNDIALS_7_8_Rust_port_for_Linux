@@ -123,7 +123,14 @@ echo
 echo "variants that the pure-Rust libm alone accounts for:"
 awk -F'\t' 'NR>1 && $5!="IDENTICAL" && $6=="IDENTICAL" {print "  " $1 "  " $4}' "$OUTTSV"
 echo
-echo "variants that remain divergent even with the host libm (real port defects):"
-awk -F'\t' 'NR>1 && $6!="IDENTICAL" {print "  " $1 "  " $4 "  (default: " $5 ")"}' "$OUTTSV"
+# This list was headed "real port defects". That was right while the libm was
+# the only substituted numerics. The pure-Rust sparse LU has no control build,
+# so every *_klu variant lands here by construction and is not a defect.
+echo "variants this experiment cannot attribute (differ under both builds):"
+awk -F'\t' 'NR>1 && $6!="IDENTICAL" {
+      tag = ($2 ~ /_klu/) ? "   <- sparse-LU substitution, no control build" : "   <- PORT DEFECT"
+      print "  " $1 "  " $4 "  (default: " $5 ")" tag }' "$OUTTSV"
+ndef=$(awk -F'\t' 'NR>1 && $6!="IDENTICAL" && $2 !~ /_klu/' "$OUTTSV" | wc -l)
+echo "  -> $ndef port defect(s)"
 echo
 echo "wrote $OUTTSV"
