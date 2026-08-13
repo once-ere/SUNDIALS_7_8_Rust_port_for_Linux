@@ -43,8 +43,16 @@ name = "idasKrylovDemo_ls"
 path = "examples/idasKrylovDemo_ls.rs"
 
 [[example]]
+name = "idasRoberts_ASAi_klu"
+path = "examples/idasRoberts_ASAi_klu.rs"
+
+[[example]]
 name = "idasRoberts_ASAi_dns"
 path = "examples/idasRoberts_ASAi_dns.rs"
+
+[[example]]
+name = "idasRoberts_FSA_klu"
+path = "examples/idasRoberts_FSA_klu.rs"
 
 [[example]]
 name = "idasRoberts_FSA_dns"

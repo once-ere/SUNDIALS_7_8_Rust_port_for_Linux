@@ -55,6 +55,10 @@ name = "cvPendulum_dns"
 path = "examples/cvPendulum_dns.rs"
 
 [[example]]
+name = "cvRoberts_block_klu"
+path = "examples/cvRoberts_block_klu.rs"
+
+[[example]]
 name = "cvRoberts_klu"
 path = "examples/cvRoberts_klu.rs"
 

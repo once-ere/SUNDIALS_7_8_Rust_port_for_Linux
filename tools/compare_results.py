@@ -68,8 +68,15 @@ def ulp_distance(a, b):
 
 
 def skeleton(line):
-    """The line with every numeric token replaced by a placeholder."""
-    return NUM.sub("\0", line)
+    """The line with every numeric token replaced by a placeholder.
+
+    Runs of blanks are collapsed as well. A printf field such as `%5ld`
+    pads to a fixed width, so a value that gains a digit (976 -> 1000)
+    eats one space. Comparing the raw spacing would call that a
+    *structural* difference when it is purely a numeric one, and would
+    hide the actual change behind a misleading classification.
+    """
+    return re.sub(r"[ \t]+", " ", NUM.sub("\0", line))
 
 
 def numbers(line):

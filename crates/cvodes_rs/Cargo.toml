@@ -79,6 +79,10 @@ name = "cvsPendulum_dns"
 path = "examples/cvsPendulum_dns.rs"
 
 [[example]]
+name = "cvsRoberts_ASAi_klu"
+path = "examples/cvsRoberts_ASAi_klu.rs"
+
+[[example]]
 name = "cvsRoberts_ASAi_dns"
 path = "examples/cvsRoberts_ASAi_dns.rs"
 
