@@ -6,11 +6,18 @@ sets under c-results/, rust-results/ and differences/.
 
 Every number printed in those documents is read out of the index files,
 which are themselves written by the run scripts from real process output.
-Nothing is typed in by hand, so re-running this script after re-running the
-harness cannot leave a stale claim behind.
+
+That is a rule this script has to keep, not a property it gets for free.
+Hardcoding a count here produces a document that looks computed and is
+wrong -- and it did: the run-to-run table carried "179" and "12" long after
+the compared set grew to 190 and the OpenMP set turned out to be 11, and the
+attribution paragraph kept asserting the host-libm build matched everything
+after the sparse-LU substitution made that false. If you add a claim below,
+derive it, or the next person to read it will be misled.
 """
 
 import os
+import re
 import platform
 import subprocess
 import sys
@@ -99,6 +106,119 @@ def argv_cell(a):
     return f"`{a}`" if a else "_(none)_"
 
 
+# A SUNDIALS example can fail its solve and still exit 0 -- several return
+# void from main after printing the failure. Exit status alone therefore
+# overstates how well the run went, so the captures are searched too.
+FAIL_MARKERS = ("returned with flag = -", "[ERROR]")
+
+
+def failure_message(base, variant):
+    """One readable line naming the failure, with build paths stripped.
+
+    SUNDIALS error lines carry an absolute source path from whatever machine
+    compiled them, which is noise in a table and would be the widest column
+    on the page. Only the file name, line and function are kept.
+    """
+    lines = []
+    for ext in (".stdout", ".stderr"):
+        f = base / (variant + ext)
+        if f.exists():
+            lines += [ln.strip() for ln in f.read_text(errors="replace").splitlines()]
+
+    flag = next((ln for ln in lines if "returned with flag = -" in ln), "")
+    err = next((ln for ln in lines if "[ERROR]" in ln), "")
+
+    if err:
+        # [ERROR][rank 0][/abs/path/foo.c:2898][someFunction] the message
+        parts = re.findall(r"\[([^\]]*)\]", err)
+        tail = err.rsplit("]", 1)[-1].strip()
+        where = ""
+        for seg in parts:
+            if "/" in seg or seg.endswith((".c", ".h")):
+                where = seg.rsplit("/", 1)[-1]
+        func = parts[-1] if parts and "/" not in parts[-1] else ""
+        err = f"`{func}`: {tail}" if func else tail
+        if where:
+            err += f" ({where})"
+    msg = " — ".join(x for x in (flag.lstrip("ERROR: ").strip(), err) if x)
+    return msg.replace("|", "\\|") or "(see the capture)"
+
+
+def internal_failures(rows, raw_dir):
+    """Rows whose captures report a solver failure regardless of exit code."""
+    out = []
+    for r in rows:
+        base = raw_dir / r["dir"]
+        text = ""
+        for ext in (".stdout", ".stderr"):
+            f = base / (r["variant"] + ext)
+            if f.exists():
+                text += f.read_text(errors="replace")
+        if any(m in text for m in FAIL_MARKERS):
+            out.append(r)
+    return out
+
+
+def not_ported_reason(rows):
+    """Describe the NOT_PORTED class from the examples actually in it.
+
+    This used to read "KLU / SuperLU_MT example". The eleven `*_klu` examples
+    are ported now and are compared like any other, so naming KLU here told
+    the reader the opposite of what the table beside it says.
+    """
+    names = sorted({r["example"] for r in rows if r["class"] == "NOT_PORTED"})
+    if not names:
+        return "none"
+    if all(n.endswith(("_sps", "_slu")) for n in names):
+        return "SuperLU_MT example; absent on both sides, so there is no output to compare"
+    return "no pure-Rust counterpart: " + ", ".join(f"`{n}`" for n in names)
+
+
+def attribution_paragraph(ident, comparable, ab_ident, ab_total, ab_libm, ab_survivors):
+    """State what the host-libm control build does and does not establish.
+
+    The wording here is load-bearing. While the libm was the only substituted
+    numerics, the control build accounted for every divergence and the
+    paragraph could say so. The pure-Rust sparse LU broke that: it has no
+    control build, because there is no KLU to switch back to, so the `*_klu`
+    variants differ under *both* builds by construction. The old text went on
+    claiming the switch explained everything, which turned a measurement into
+    a false statement.
+    """
+    n_libm, n_surv = len(ab_libm), len(ab_survivors)
+    out = [
+        f"**With the elementary functions delegated back to the host C library "
+        f"(`--features host-libm`), {ab_ident} of {ab_total} are identical.** "
+        f"The switch changes nothing else in the port, so the {n_libm} "
+        f"variant{'s' if n_libm != 1 else ''} it restores "
+        f"{'are' if n_libm != 1 else 'is'} caused by the pure-Rust libm and by "
+        f"nothing else — measured, not asserted."
+    ]
+    if n_surv:
+        klu = [r for r in ab_survivors if "_klu" in r["example"]]
+        if len(klu) == n_surv:
+            out.append(
+                f"The {n_surv} that differ under **both** builds are exactly the "
+                f"`*_klu` examples. That is not a second finding, it is the same "
+                f"one seen twice: `host-libm` does not touch the sparse linear "
+                f"solver, and there is no KLU to switch back to, so those "
+                f"variants cannot be attributed this way. They are covered "
+                f"instead by direct verification of the replacement solver."
+            )
+        else:
+            other = [r for r in ab_survivors if "_klu" not in r["example"]]
+            out.append(
+                f"**{len(other)} variant{'s' if len(other) != 1 else ''} differ under both "
+                f"builds and {'are' if len(other) != 1 else 'is'} not `*_klu`: "
+                + ", ".join(f"`{r['example']}`" for r in other)
+                + ". Nothing in the port accounts for "
+                + ("them" if len(other) != 1 else "it")
+                + ", which is the signature of a port defect. Fix before landing.**"
+            )
+    out.append("See [ATTRIBUTION.md](ATTRIBUTION.md).")
+    return "\n\n".join(out)
+
+
 # --------------------------------------------------------------------------
 # c-results
 # --------------------------------------------------------------------------
@@ -112,6 +232,23 @@ def write_c(p):
     other = sorted(d for d in by_dir if d not in SOLVER_TITLE)
     n_ok = sum(1 for r in rows if r["status"] == "OK")
 
+    n_serial = sum(len(by_dir[d]) for d in serial)
+    n_rust = len(read_index(R_DIR / "index.tsv")) if (R_DIR / "index.tsv").exists() else 0
+    omp_dirs = sorted(d for d in by_dir if d.endswith(("C_openmp", "F2003_openmp")))
+    n_omp = sum(len(by_dir[d]) for d in omp_dirs)
+    # observed by running the whole pipeline three times and diffing the
+    # captures with git; not derivable from a single run, so it is named
+    # explicitly rather than counted
+    OMP_MOVERS = [
+        "ark_heat1D_omp 4",
+        "idaFoodWeb_kry_omp 4",
+        "idasFoodWeb_kry_omp 4",
+        "kinFoodWeb_kry_omp 4",
+        "idaHeat2D_kry_omp_f2003 4",
+        "idaHeat2D_kry_omp_f2003 8",
+    ]
+    failed = internal_failures(rows, C_DIR / "raw")
+
     doc = [
         "# c-results — every upstream C example, built and executed here",
         "",
@@ -124,10 +261,12 @@ def write_c(p):
         "",
         prov_block(p),
         "",
-        "The C sources are the upstream tree, used read-only:",
-        "`/home/nsh/Developer/sundials-7.8.0` (reachable in this repository as",
-        "the `upstream-c` symlink). The copy under `examples/` in this",
-        "repository is the same tree and supplies the CMake tuples that decide",
+        "The C sources are an unpacked SUNDIALS 7.8.0 tree, used read-only. On",
+        "the machine above it was `/home/nsh/Developer/sundials-7.8.0`, reached",
+        "through the `upstream-c` symlink; that path is recorded in every",
+        "`.meta` file and is provenance, not a dependency — point the symlink",
+        "at your own copy and the pipeline reproduces. The vendored `examples/`",
+        "tree is the same sources, and supplies the CMake tuples that decide",
         "which command-line variants each example is run with.",
         "",
         "## How to reproduce all of it",
@@ -185,23 +324,23 @@ def write_c(p):
         "",
         "| set | variants | reproduced byte for byte |",
         "|---|---:|---|",
-        "| the six *serial* directories (the compared set) | 179 | **all of them** |",
-        "| every Rust example (`rust-results/`) | 179 | **all of them** |",
-        "| `*/C_openmp` and `*/F2003_openmp` | 12 | 6 of them differ between runs |",
+        f"| the six *serial* directories (the compared set) | {n_serial} | **all of them** |",
+        f"| every Rust example (`rust-results/`) | {n_rust} | **all of them** |",
+        f"| `*/C_openmp` and `*/F2003_openmp` | {n_omp} | "
+        f"{len(OMP_MOVERS)} of them differ between runs |",
         "",
-        "The six that move are OpenMP examples run with a thread count as argv:",
-        "`ark_heat1D_omp 4`, `idaFoodWeb_kry_omp 4`, `idasFoodWeb_kry_omp 4`,",
-        "`kinFoodWeb_kry_omp 4`, and `idaHeat2D_kry_omp_f2003` at 4 and 8",
-        "threads. This is expected and is not a defect in anything: an OpenMP",
+        f"The {len(OMP_MOVERS)} that move are OpenMP examples run with a thread count as argv: "
+        + ", ".join(f"`{v}`" for v in OMP_MOVERS)
+        + ". This is expected and is not a defect in anything: an OpenMP",
         "reduction sums partial results in whatever order the threads finish, so",
         "a dot product or a norm differs in its last bits from run to run, and",
         "inside an iterative solver that changes the iteration counts. Compare",
         "`kinFoodWeb_kry_omp 4`, which reported `nni = 7, nli = 229` on one run",
         "and `nni = 10, nli = 378` on the next.",
         "",
-        "None of the six is in the compared set, so `differences/` is unaffected.",
-        "It is recorded here because a reader is entitled to know which numbers",
-        "in this directory are stable and which are not.",
+        f"None of the {len(OMP_MOVERS)} is in the compared set, so `differences/` is",
+        "unaffected. It is recorded here because a reader is entitled to know which",
+        "numbers in this directory are stable and which are not.",
         "",
         "## Per-solver tables (serial examples — these are the ones with a Rust counterpart)",
         "",
@@ -211,6 +350,33 @@ def write_c(p):
                    f" — {len(by_dir[d])} variants")
     doc += [
         "",
+        "## Runs that exited 0 but did not succeed",
+        "",
+    ]
+    if failed:
+        doc += [
+            f"Exit status is not the whole story: {len(failed)} of the {len(rows)} runs",
+            "returned 0 while their own output reports a failed solve. None is in the",
+            "compared set, so `differences/` is unaffected, but a table of exit codes",
+            "alone would read as though everything worked.",
+            "",
+            "| directory | variant | what it reports |",
+            "|---|---|---|",
+        ]
+        for r in failed:
+            doc.append(
+                f"| `{r['dir']}` | `{r['variant']}` | "
+                f"{failure_message(C_DIR / 'raw' / r['dir'], r['variant'])} |"
+            )
+        doc.append("")
+    else:
+        doc += [
+            "None. Every run that exited 0 also reports a completed solve, checked by",
+            f"searching each capture for {' and '.join(repr(m) for m in FAIL_MARKERS)}.",
+            "",
+        ]
+
+    doc += [
         "## Other example families that were also built and run",
         "",
         "These have no pure-Rust counterpart in this port (it is serial-only),",
@@ -224,17 +390,42 @@ def write_c(p):
         allok = all(r["status"] == "OK" for r in by_dir[d])
         doc.append(f"| `{d}` | {len(by_dir[d])} | {'yes' if allok else 'NO'} |")
 
+    # Which optional backends were actually reachable is decided by whether
+    # the examples that need them produced rows, not by what was written down
+    # when the tree was first probed. libsuitesparse-dev was installed part
+    # way through this work, and the paragraph that used to live here went on
+    # calling KLU absent afterwards.
+    BACKENDS = [
+        ("KLU (SuiteSparse)", lambda r: "_klu" in r["example"]),
+        ("SuperLU_MT", lambda r: r["example"].endswith(("_sps", "_slu"))),
+        ("MPI", lambda r: r["dir"].endswith("parallel")),
+        ("hypre", lambda r: "parhyp" in r["dir"]),
+        ("PETSc", lambda r: "petsc" in r["dir"]),
+        ("LAPACK", lambda r: "lapack" in r["dir"]),
+        ("CUDA / RAJA / Kokkos / MAGMA / Ginkgo / SYCL / XBraid",
+         lambda r: any(k in r["dir"] for k in
+                       ("cuda", "raja", "kokkos", "magma", "ginkgo", "sycl", "xbraid", "onemkl"))),
+    ]
     doc += [
         "",
-        "## Example families that could not be built here",
+        "## Which optional backends were reachable",
         "",
-        "See [`../requirements.md`](../requirements.md) for the probe results and",
-        "the exact `apt` command. In short: MPI headers, KLU, SuperLU_MT,",
-        "SuperLU_DIST, hypre, PETSc, Trilinos, Kokkos, MAGMA, Ginkgo, RAJA,",
-        "oneMKL and XBraid are absent, which removes the `parallel`, `parhyp`,",
-        "`petsc`, `cuda`, `raja`, `kokkos`, `ginkgo`, `magma`, `superludist`,",
-        "`trilinos`, `CXX_xbraid`, `CXX_onemkl`, `CXX_sycl` and the `*_klu` /",
-        "`*_sps` / `*_slu` examples from this run.",
+        "Read off the run itself: a backend counts as present here when the",
+        "examples that need it produced rows in `index.tsv`. See",
+        "[`../requirements.md`](../requirements.md) for the probe results and the",
+        "exact `apt` command.",
+        "",
+        "| backend | example variants that ran | on this machine |",
+        "|---|---:|---|",
+    ]
+    for name, pred in BACKENDS:
+        n = sum(1 for r in rows if pred(r))
+        doc.append(f"| {name} | {n} | {'**present**' if n else 'absent'} |")
+    doc += [
+        "",
+        "The absent ones remove their example families from this run entirely --",
+        "there is no output on either side, so nothing is being hidden by their",
+        "absence.",
         "",
     ]
     (C_DIR / "README.md").write_text("\n".join(doc) + "\n")
@@ -399,10 +590,17 @@ def write_d(p):
     # the host-libm control build, if tools/ab_host_libm.sh has been run
     ab_path = D_DIR / "ab-host-libm.tsv"
     ab_total = ab_ident = None
+    ab_libm = ab_survivors = []
     if ab_path.exists():
         ab = read_index(ab_path)
         ab_total = len(ab)
         ab_ident = sum(1 for r in ab if r["host_libm_class"] == "IDENTICAL")
+        # the switch explains a variant when restoring the host libm restores
+        # byte-identity; it explains nothing about a variant that differs
+        # either way
+        ab_libm = [r for r in ab
+                   if r["default_class"] != "IDENTICAL" and r["host_libm_class"] == "IDENTICAL"]
+        ab_survivors = [r for r in ab if r["host_libm_class"] != "IDENTICAL"]
 
     doc = [
         "# differences — C output versus Rust output, variant by variant",
@@ -433,11 +631,7 @@ def write_d(p):
         f"({100.0 * ident / comparable:.1f}%).**",
         "",
         (
-            f"**With the elementary functions delegated back to the host C library "
-            f"(`--features host-libm`), {ab_ident} of {ab_total} are identical — that is, "
-            f"all of them.** Every remaining difference is therefore caused by the "
-            f"deliberate pure-Rust libm and by nothing else: **0 port defects**, measured "
-            f"rather than asserted. See [ATTRIBUTION.md](ATTRIBUTION.md)."
+            attribution_paragraph(ident, comparable, ab_ident, ab_total, ab_libm, ab_survivors)
             if ab_ident is not None
             else "_(run `tools/ab_host_libm.sh` to attribute the differences.)_"
         ),
@@ -448,7 +642,7 @@ def write_d(p):
         f"| WHITESPACE | {cls.get('WHITESPACE', 0)} | every printed character matches; only column padding differs |",
         f"| NUMERIC | {cls.get('NUMERIC', 0)} | same text, same field count, at least one number differs |",
         f"| STRUCTURAL | {cls.get('STRUCTURAL', 0)} | different lines, words or field counts |",
-        f"| NOT_PORTED | {cls.get('NOT_PORTED', 0)} | KLU / SuperLU_MT example, excluded by design on both sides |",
+        f"| NOT_PORTED | {cls.get('NOT_PORTED', 0)} | {not_ported_reason(rows)} |",
         f"| NO_C_RUN | {cls.get('NO_C_RUN', 0)} | the C example could not be built on this machine |",
         "",
         "## How to read a difference",
@@ -498,7 +692,7 @@ def write_d(p):
         ]
         for i, r in enumerate(sorted(rs, key=lambda r: (r["example"], r["argv"])), 1):
             link = (
-                f"[diff](diffs/{d}/{r['variant']}.diff)"
+                f"[diff](../diffs/{d}/{r['variant']}.diff)"
                 if r["class"] not in ("IDENTICAL", "NOT_PORTED", "NO_C_RUN")
                 else "—"
             )

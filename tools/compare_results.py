@@ -141,7 +141,19 @@ def main():
     c_rows = {(r["dir"], r["variant"]): r for r in read_index(C_DIR / "index.tsv")}
     r_rows = {(r["dir"], r["variant"]): r for r in read_index(R_DIR / "index.tsv")}
 
-    (D_DIR / "diffs").mkdir(parents=True, exist_ok=True)
+    # Clear the previous run's diffs before writing this one's. Without this
+    # the directory only ever grows: a variant that used to differ and now
+    # matches keeps its stale .diff and .numbers, so the tree ends up
+    # contradicting the index beside it. That happened -- idaRoberts_klu and
+    # idasRoberts_klu kept diffs from before the pivoting fix while
+    # index.tsv called them IDENTICAL, which is exactly the kind of internal
+    # contradiction that makes an evidence directory worthless.
+    diffs = D_DIR / "diffs"
+    if diffs.exists():
+        for stale in diffs.rglob("*"):
+            if stale.is_file() and stale.suffix in (".diff", ".numbers"):
+                stale.unlink()
+    diffs.mkdir(parents=True, exist_ok=True)
     out = open(D_DIR / "index.tsv", "w")
     out.write(
         "dir\texample\targv\tvariant\tclass\tc_status\trust_status\t"
@@ -214,6 +226,10 @@ def main():
             + "\n"
         )
     out.close()
+
+    for d in sorted(diffs.rglob("*"), reverse=True):
+        if d.is_dir() and not any(d.iterdir()):
+            d.rmdir()
 
     print("classification of the C-vs-Rust comparison:")
     for k in sorted(counts, key=lambda k: -counts[k]):
