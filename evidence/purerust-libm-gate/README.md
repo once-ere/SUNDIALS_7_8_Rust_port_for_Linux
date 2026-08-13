@@ -55,6 +55,10 @@ ran on Alpine — there is no C toolchain build there, so the C-versus-Rust comp
 and the libm differential were not repeated on musl. And this is x86-64
 throughout; nothing here says anything about arm64.
 
+Each log's header line now records the architecture it ran on
+(`--- x86_64 / ldd ... / rustc ... ---`), so an emulated or cross-architecture
+run can never be mistaken for a native one. All five above say `x86_64`.
+
 Checking that claim yourself:
 
 ```bash

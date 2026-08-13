@@ -1,9 +1,3 @@
-Resolved "debian" as an alias (/etc/containers/registries.conf.d/shortnames.conf)
-Trying to pull docker.io/library/debian:12...
-Getting image source signatures
-Copying blob sha256:3af9207d37990175f61d5ce9faa0c7373ffcd2d6da1b6ba0a9ca9d61f8f47cc9
-Copying config sha256:a97c45fa72171d55c288623cfb1b66e14c9ef5bb3c7c179bc7dd75ad6f1cb73c
-Writing manifest to image destination
 debconf: delaying package configuration, since apt-utils is not installed
 info: downloading installer
 warn: It looks like you have an existing rustup settings file at:
@@ -16,7 +10,7 @@ info: syncing channel updates for stable-x86_64-unknown-linux-gnu
 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
 info: downloading 3 components
 info: default toolchain set to stable-x86_64-unknown-linux-gnu
---- ldd (Debian GLIBC 2.36-9+deb12u14) 2.36 / rustc 1.97.1 (8bab26f4f 2026-07-14) ---
+--- x86_64 / ldd (Debian GLIBC 2.36-9+deb12u14) 2.36 / rustc 1.97.1 (8bab26f4f 2026-07-14) ---
 IDENTICAL: 145
 DIFF:      34
 EXCLUDED:  20

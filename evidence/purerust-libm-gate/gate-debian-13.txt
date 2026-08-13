@@ -1,9 +1,3 @@
-Resolved "debian" as an alias (/etc/containers/registries.conf.d/shortnames.conf)
-Trying to pull docker.io/library/debian:13...
-Getting image source signatures
-Copying blob sha256:1da3cb2f93f2ca3c5bdaf4c024a7f1ebd717938d20c858e4be4b9aa81fc8608c
-Copying config sha256:826a5616954ee645ca5c165d4c8c960d4d8d444347838cf7bdc1ac555385358b
-Writing manifest to image destination
 info: downloading installer
 warn: It looks like you have an existing rustup settings file at:
 warn: /root/.rustup/settings.toml
@@ -15,7 +9,7 @@ info: syncing channel updates for stable-x86_64-unknown-linux-gnu
 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
 info: downloading 3 components
 info: default toolchain set to stable-x86_64-unknown-linux-gnu
---- ldd (Debian GLIBC 2.41-12+deb13u3) 2.41 / rustc 1.97.1 (8bab26f4f 2026-07-14) ---
+--- x86_64 / ldd (Debian GLIBC 2.41-12+deb13u3) 2.41 / rustc 1.97.1 (8bab26f4f 2026-07-14) ---
 IDENTICAL: 145
 DIFF:      34
 EXCLUDED:  20

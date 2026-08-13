@@ -1,10 +1,3 @@
-Resolved "archlinux" as an alias (/etc/containers/registries.conf.d/shortnames.conf)
-Trying to pull docker.io/library/archlinux:latest...
-Getting image source signatures
-Copying blob sha256:c3ac673653f3eb63122ca0a5a88a3bdf60fe85283b2322f8daf2136fedb6786f
-Copying blob sha256:282e2e0e165ea093880e76b723a5042d17aef1820356e450dc859c33a18bcae5
-Copying config sha256:246344d948ab5fd1c232f64bd92a5faf18dcae040322c2287613c68c884e476a
-Writing manifest to image destination
 warning: curl-8.21.0-1 is up to date -- reinstalling
 info: downloading installer
 warn: It looks like you have an existing rustup settings file at:
@@ -17,7 +10,7 @@ info: syncing channel updates for stable-x86_64-unknown-linux-gnu
 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
 info: downloading 3 components
 info: default toolchain set to stable-x86_64-unknown-linux-gnu
---- ldd (GNU libc) 2.44 / rustc 1.97.1 (8bab26f4f 2026-07-14) ---
+--- x86_64 / ldd (GNU libc) 2.44 / rustc 1.97.1 (8bab26f4f 2026-07-14) ---
 IDENTICAL: 145
 DIFF:      34
 EXCLUDED:  20
