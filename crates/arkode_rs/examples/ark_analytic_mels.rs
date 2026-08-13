@@ -205,7 +205,7 @@ fn f(t: sunrealtype, y: &N_Vector, ydot: &N_Vector, user_data: &mut Option<Box<d
     let u = NV_DATA_S(y)[0]; /* access current solution value */
 
     /* fill in the RHS function */
-    NV_DATA_S(ydot)[0] = lambda * u + 1.0 / (1.0 + t * t) - lambda * t.atan();
+    NV_DATA_S(ydot)[0] = lambda * u + 1.0 / (1.0 + t * t) - lambda * t.sun_atan();
 
     0 /* return with success */
 }
@@ -364,7 +364,7 @@ fn check_retval(returnvalue: Option<i32>, funcname: &str, opt: i32) -> i32 {
 /* check the computed solution */
 fn check_ans(y: &N_Vector, t: sunrealtype, rtol: sunrealtype, atol: sunrealtype) -> i32 {
     /* compute solution error */
-    let ans = t.atan();
+    let ans = t.sun_atan();
     let ewt = 1.0 / (rtol * SUNRabs(ans) + atol);
     let err = ewt * SUNRabs(NV_DATA_S(y)[0] - ans);
 

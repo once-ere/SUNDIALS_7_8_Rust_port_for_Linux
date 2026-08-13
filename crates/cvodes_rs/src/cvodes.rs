@@ -12025,6 +12025,7 @@ pub(crate) fn cvQuadSensRhs1InternalDQ(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sundials_core::sundials_libm::SunMath;
 
     use crate::cvodes_io::{CVodeSetSensParams, CVodeSetUserData};
     use crate::cvodes_ls::CVodeSetLinearSolver;
@@ -12145,7 +12146,7 @@ mod tests {
 
         /* state: y(TEND) = exp(-p*TEND) */
         let yend = N_VGetArrayPointer(&y).expect("N_VGetArrayPointer")[0];
-        let y_exact = (-P0 * TEND).exp();
+        let y_exact = (-P0 * TEND).sun_exp();
         assert!(
             SUNRabs(yend - y_exact) <= 1.0e-6 * y_exact,
             "state wrong: got {yend}, expected {y_exact}"
@@ -12155,7 +12156,7 @@ mod tests {
         let mut tS = ZERO;
         assert_eq!(CVodeGetSens(&cvode_mem, &mut tS, &yS), CV_SUCCESS);
         let s = N_VGetArrayPointer(&yS[0]).expect("N_VGetArrayPointer")[0];
-        let s_exact = -TEND * (-P0 * TEND).exp();
+        let s_exact = -TEND * (-P0 * TEND).sun_exp();
 
         /* the defect signature: with an unshared copy of `p` this is 0 */
         assert!(s != ZERO, "sensitivity is identically zero — the DQ perturbation never reached the RHS callback");

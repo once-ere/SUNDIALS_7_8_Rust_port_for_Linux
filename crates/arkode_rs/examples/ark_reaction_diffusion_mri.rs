@@ -387,7 +387,7 @@ fn SetInitialCondition(y: &N_Vector, user_data: &UserData) -> i32 {
     /* set initial condition */
     i = 0;
     while i < N {
-        Y[i as usize] = 1.0 / (1.0 + (lam * (i as sunrealtype * dx - 1.0)).exp());
+        Y[i as usize] = 1.0 / (1.0 + (lam * (i as sunrealtype * dx - 1.0)).sun_exp());
         i += 1;
     }
 

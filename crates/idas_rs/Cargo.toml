@@ -3,6 +3,10 @@ name = "idas_rs"
 version.workspace = true
 edition.workspace = true
 
+[features]
+# forwards to sundials_core/host-libm; see that manifest
+host-libm = ["sundials_core/host-libm"]
+
 [dependencies]
 sundials_core = { path = "../sundials_core" }
 
@@ -45,6 +49,10 @@ path = "examples/idasRoberts_ASAi_dns.rs"
 [[example]]
 name = "idasRoberts_FSA_dns"
 path = "examples/idasRoberts_FSA_dns.rs"
+
+[[example]]
+name = "idasRoberts_klu"
+path = "examples/idasRoberts_klu.rs"
 
 [[example]]
 name = "idasRoberts_dns"

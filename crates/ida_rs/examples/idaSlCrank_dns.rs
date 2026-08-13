@@ -49,10 +49,10 @@ fn force(yy: &N_Vector, Q: &mut [sunrealtype; 3], data: &UserData) {
     let xd = NV_Ith_S(yy, 4);
     let pd = NV_Ith_S(yy, 5);
 
-    let s1 = q.sin();
-    let c1 = q.cos();
-    let s2 = p.sin();
-    let c2 = p.cos();
+    let s1 = q.sun_sin();
+    let c1 = q.sun_cos();
+    let s2 = p.sun_sin();
+    let c2 = p.sun_cos();
     let s21 = s2 * c1 - c2 * s1;
     let c21 = c2 * c1 + s2 * s1;
 
@@ -102,10 +102,10 @@ fn ressc(
     let mu1 = yval[8];
     let mu2 = yval[9];
 
-    let s1 = q.sin();
-    let c1 = q.cos();
-    let s2 = p.sin();
-    let c2 = p.cos();
+    let s1 = q.sun_sin();
+    let c1 = q.sun_cos();
+    let s2 = p.sun_sin();
+    let c2 = p.sun_cos();
 
     let mut Q = [0.0; 3];
     force(yy, &mut Q, &data);
@@ -132,7 +132,7 @@ fn setIC(yy: &N_Vector, yp: &N_Vector, data: &UserData) {
     N_VConst(ZERO, yy);
     N_VConst(ZERO, yp);
 
-    let pi = FOUR * ONE.atan();
+    let pi = FOUR * ONE.sun_atan();
 
     let a = data.a;
     let J1 = data.J1;
@@ -140,8 +140,8 @@ fn setIC(yy: &N_Vector, yp: &N_Vector, data: &UserData) {
     let J2 = data.J2;
 
     let q = pi / TWO;
-    let p = (-a).asin();
-    let x = p.cos();
+    let p = (-a).sun_asin();
+    let x = p.sun_cos();
 
     NV_Ith_S_set(yy, 0, q);
     NV_Ith_S_set(yy, 1, x);

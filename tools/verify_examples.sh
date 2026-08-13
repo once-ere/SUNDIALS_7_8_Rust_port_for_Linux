@@ -41,7 +41,14 @@
 set -u
 cd "$(dirname "$0")/.."
 WS_ROOT="$(pwd)"
-UPSTREAM="$WS_ROOT/.."
+# Reference outputs and CMake tuples: prefer the tree vendored in this
+# repository, and fall back to the historical layout where the upstream
+# SUNDIALS checkout is this workspace's parent directory.
+if [ -d "$WS_ROOT/examples/cvode/serial" ]; then
+  UPSTREAM="$WS_ROOT"
+else
+  UPSTREAM="$WS_ROOT/.."
+fi
 LOGS="$WS_ROOT/logs"
 mkdir -p "$LOGS"
 

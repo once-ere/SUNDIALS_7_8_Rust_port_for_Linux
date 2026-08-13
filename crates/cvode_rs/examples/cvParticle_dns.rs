@@ -468,8 +468,8 @@ fn InputHelp() {
 fn ComputeSolution(t: sunrealtype, y: &N_Vector, udata: &UserData) -> i32 {
     let mut ydata = N_VGetArrayPointer(y).expect("vector data");
 
-    ydata[0] = ((udata.alpha) * t).cos();
-    ydata[1] = ((udata.alpha) * t).sin();
+    ydata[0] = ((udata.alpha) * t).sun_cos();
+    ydata[1] = ((udata.alpha) * t).sun_sin();
 
     0
 }

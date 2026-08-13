@@ -326,12 +326,12 @@ fn ans(t: sunrealtype, ytrue: &N_Vector) -> i32 {
     let c4: sunrealtype = 51.0 / 2501.0;
 
     /* fill in the solution vector */
-    NV_Ith_S_set(ytrue, 0, (c1 * t).cos());
-    NV_Ith_S_set(ytrue, 1, (c1 * t).sin());
+    NV_Ith_S_set(ytrue, 0, (c1 * t).sun_cos());
+    NV_Ith_S_set(ytrue, 1, (c1 * t).sun_sin());
     NV_Ith_S_set(
         ytrue,
         2,
-        c2 * (-t).exp() - c3 * (c1 * t).cos() + c4 * (c1 * t).sin(),
+        c2 * (-t).sun_exp() - c3 * (c1 * t).sun_cos() + c4 * (c1 * t).sun_sin(),
     );
 
     /* Return with success */

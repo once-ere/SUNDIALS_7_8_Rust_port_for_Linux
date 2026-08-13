@@ -1,5 +1,5 @@
 //! `sundials_core` — shared library of
-//! **SUNDIALS_7_8_Rust_port_for_AppleSilicon_macos**, a pure-Rust
+//! **SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu**, a pure-Rust
 //! line-by-line port of SUNDIALS 7.8.0.
 //!
 //! # Platform scope
@@ -8,28 +8,26 @@
 //! and no `cfg(target_os)`/`cfg(target_arch)` anywhere. It builds
 //! warning-free and passes its unit tests on any target Rust supports.
 //!
-//! Its *verified* behaviour is not portable. The acceptance criterion of this
-//! project — byte-identical printed output against the upstream C reference
-//! examples — was established only on **macOS running on Apple Silicon
-//! (arm64)**, against Apple's libm.
+//! Unlike the macOS/arm64 and Linux/glibc repositories this tree inherits its
+//! translation from, **no elementary function here resolves to the host C
+//! library.** [`sundials_libm`] implements `exp`, `log`, `pow`, `expm1`,
+//! `log1p`, `sin`, `cos`, `atan`, `asin`, `acos`, `sinh`, `cosh` and `acosh`
+//! in pure Rust, and every call site in the library and in the translated
+//! examples goes through it (spelled `x.sun_sin()`, `x.sun_exp()`, …). The
+//! only `f64` methods still used are `sqrt`, `mul_add`, `abs`, `ceil`,
+//! `round` and `copysign` — all IEEE-754 specified, correctly rounded, and
+//! identical on every target.
 //!
-//! The split is exact, and worth knowing precisely:
+//! The practical consequence is that the numerical output of this port is a
+//! function of its own source only: it does not move when the host glibc
+//! version moves. `tools/libm_differential.sh` measures, function by
+//! function, how the pure-Rust routines relate to the host libm on the
+//! machine the port is built on; `LIBM.md` records the result.
 //!
-//! * **Host-dependent** — [`sundials_math::SUNRexp`], `arkode_lsrkstep`'s
-//!   `SUNRlog`/`SUNRsinh`/`SUNRcosh`/`SUNRacosh`, and every `sin`, `cos`,
-//!   `asin`, `acos`, `atan`, `exp` and `ln` in the examples. These are `f64`
-//!   methods of *unspecified precision*: Rust `std` documents them as varying
-//!   by platform, and forwards them to the host libm. One ulp of disagreement
-//!   forks an adaptive integrator's step-size trajectory, and with it the
-//!   printed output.
-//! * **Host-independent** — [`sundials_math::SUNRpowerR`], which runs a
-//!   ported ARM optimized-routines/musl algorithm and never calls the host
-//!   libm; and [`sundials_math::SUNRsqrt`], [`sundials_math::SUNRceil`],
-//!   [`sundials_math::SUNRround`], [`sundials_math::SUNRabs`],
-//!   [`sundials_math::SUNRcopysign`] and `f64::mul_add`, which are IEEE-754
-//!   specified, correctly rounded, and identical on every target.
-//!
-//! See `README.md` § "Platform scope" and `sundials.md` §9.
+//! The reference platform for the *example* results is Ubuntu 26.04 LTS on
+//! x86-64 (glibc 2.43, gcc 15.2.0, rustc 1.96.1). See `README.md`.
+
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
 
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
 
@@ -56,12 +54,15 @@ pub mod sundials_band;
 pub mod sundials_cli;
 pub mod sundials_dense;
 pub mod sundials_direct;
+pub mod sundials_libm;
 pub mod sundials_math;
+pub mod sundials_sparse_lu;
 pub mod sundials_stepper;
 pub mod sundomeigest_arnoldi;
 pub mod sundomeigest_power;
 pub mod sunlinsol_band;
 pub mod sunlinsol_dense;
+pub mod sunlinsol_klu;
 pub mod sunlinsol_pcg;
 pub mod sunlinsol_spbcgs;
 pub mod sunlinsol_spfgmr;

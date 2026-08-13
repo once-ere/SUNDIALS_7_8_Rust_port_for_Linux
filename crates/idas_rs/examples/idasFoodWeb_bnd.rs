@@ -645,7 +645,7 @@ fn WebRates(
         );
     }
 
-    let fac = ONE + ALPHA * xx * yy + BETA * (FOURPI * xx).sin() * (FOURPI * yy).sin();
+    let fac = ONE + ALPHA * xx * yy + BETA * (FOURPI * xx).sun_sin() * (FOURPI * yy).sun_sin();
 
     for is in 0..NUM_SPECIES {
         ratesxy[is] = cxy[is] * (bcoef[is] * fac + ratesxy[is]);

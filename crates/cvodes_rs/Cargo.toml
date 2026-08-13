@@ -3,6 +3,10 @@ name = "cvodes_rs"
 version.workspace = true
 edition.workspace = true
 
+[features]
+# forwards to sundials_core/host-libm; see that manifest
+host-libm = ["sundials_core/host-libm"]
+
 [dependencies]
 sundials_core = { path = "../sundials_core" }
 
@@ -83,6 +87,10 @@ name = "cvsRoberts_ASAi_dns_constraints"
 path = "examples/cvsRoberts_ASAi_dns_constraints.rs"
 
 [[example]]
+name = "cvsRoberts_FSA_klu"
+path = "examples/cvsRoberts_FSA_klu.rs"
+
+[[example]]
 name = "cvsRoberts_FSA_dns"
 path = "examples/cvsRoberts_FSA_dns.rs"
 
@@ -93,6 +101,10 @@ path = "examples/cvsRoberts_FSA_dns_Switch.rs"
 [[example]]
 name = "cvsRoberts_FSA_dns_constraints"
 path = "examples/cvsRoberts_FSA_dns_constraints.rs"
+
+[[example]]
+name = "cvsRoberts_klu"
+path = "examples/cvsRoberts_klu.rs"
 
 [[example]]
 name = "cvsRoberts_dns"

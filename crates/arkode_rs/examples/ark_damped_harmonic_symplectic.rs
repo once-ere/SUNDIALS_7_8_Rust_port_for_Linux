@@ -285,11 +285,11 @@ fn main() {
 }
 
 fn omega(t: sunrealtype) -> sunrealtype {
-    (t / 2.0).cos()
+    (t / 2.0).sun_cos()
 }
 
 fn F(t: sunrealtype) -> sunrealtype {
-    0.018 * (t / PI).sin()
+    0.018 * (t / PI).sun_sin()
 }
 
 fn Hamiltonian(yvec: &N_Vector, t: sunrealtype) -> sunrealtype {
@@ -298,7 +298,7 @@ fn Hamiltonian(yvec: &N_Vector, t: sunrealtype) -> sunrealtype {
     let p: sunrealtype = y[0];
     let q: sunrealtype = y[1];
 
-    H = (p * p * (-F(t)).exp()) / 2.0 + (omega(t) * omega(t) * q * q * F(t).exp()) / 2.0;
+    H = (p * p * (-F(t)).sun_exp()) / 2.0 + (omega(t) * omega(t) * q * q * F(t).sun_exp()) / 2.0;
 
     H
 }
@@ -313,7 +313,7 @@ fn qdot(
     let mut ydot = N_VGetArrayPointer(ydotvec).expect("ydot data");
     let p: sunrealtype = y[0];
 
-    ydot[1] = p * (-F(t)).exp();
+    ydot[1] = p * (-F(t)).sun_exp();
 
     0
 }

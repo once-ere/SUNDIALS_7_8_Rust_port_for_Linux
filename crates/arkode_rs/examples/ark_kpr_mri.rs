@@ -1271,21 +1271,21 @@ fn Jf(
  * ------------------------------*/
 
 fn r(t: sunrealtype, _user_data: &[sunrealtype; 3]) -> sunrealtype {
-    0.5 * t.cos()
+    0.5 * t.sun_cos()
 }
 
 fn s(t: sunrealtype, user_data: &[sunrealtype; 3]) -> sunrealtype {
     let rpar = user_data;
-    (rpar[1] * t).cos()
+    (rpar[1] * t).sun_cos()
 }
 
 fn rdot(t: sunrealtype, _user_data: &[sunrealtype; 3]) -> sunrealtype {
-    -0.5 * t.sin()
+    -0.5 * t.sun_sin()
 }
 
 fn sdot(t: sunrealtype, user_data: &[sunrealtype; 3]) -> sunrealtype {
     let rpar = user_data;
-    -rpar[1] * (rpar[1] * t).sin()
+    -rpar[1] * (rpar[1] * t).sun_sin()
 }
 
 fn utrue(t: sunrealtype, user_data: &[sunrealtype; 3]) -> sunrealtype {

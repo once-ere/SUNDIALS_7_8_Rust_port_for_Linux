@@ -183,12 +183,12 @@ fn main() {
         }
         let mut data = data.unwrap();
 
-        pi = 4.0 * (1.0f64).atan();
+        pi = 4.0 * (1.0f64).sun_atan();
         i = 0;
         while i < N {
-            data[IDX(i, 0) as usize] = a + 0.1 * (pi * i as sunrealtype * udata.dx).sin(); /* u */
-            data[IDX(i, 1) as usize] = b / a + 0.1 * (pi * i as sunrealtype * udata.dx).sin(); /* v */
-            data[IDX(i, 2) as usize] = b + 0.1 * (pi * i as sunrealtype * udata.dx).sin(); /* w */
+            data[IDX(i, 0) as usize] = a + 0.1 * (pi * i as sunrealtype * udata.dx).sun_sin(); /* u */
+            data[IDX(i, 1) as usize] = b / a + 0.1 * (pi * i as sunrealtype * udata.dx).sun_sin(); /* v */
+            data[IDX(i, 2) as usize] = b + 0.1 * (pi * i as sunrealtype * udata.dx).sun_sin(); /* w */
             i += 1;
         }
     }

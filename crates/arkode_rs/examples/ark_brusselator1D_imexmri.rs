@@ -113,7 +113,7 @@ fn main() {
     let dx: sunrealtype = ONE / (N - 1) as sunrealtype; /* set spatial mesh spacing */
     let a: sunrealtype = 0.6; /* problem parameters           */
     let b: sunrealtype = 2.0;
-    let pi: sunrealtype = 4.0 * (ONE).atan();
+    let pi: sunrealtype = 4.0 * (ONE).sun_atan();
     let du: sunrealtype = 0.01;
     let dv: sunrealtype = 0.01;
     let dw: sunrealtype = 0.01;
@@ -1586,9 +1586,9 @@ fn SetIC(y: &N_Vector, user_data: &UserData) -> i32 {
     /* Set initial conditions into y */
     i = 0;
     while i < N {
-        data[IDX(i, 0) as usize] = a + 0.1 * (pi * i as sunrealtype * dx).sin(); /* u */
-        data[IDX(i, 1) as usize] = b / a + 0.1 * (pi * i as sunrealtype * dx).sin(); /* v */
-        data[IDX(i, 2) as usize] = b + 0.1 * (pi * i as sunrealtype * dx).sin(); /* w */
+        data[IDX(i, 0) as usize] = a + 0.1 * (pi * i as sunrealtype * dx).sun_sin(); /* u */
+        data[IDX(i, 1) as usize] = b / a + 0.1 * (pi * i as sunrealtype * dx).sun_sin(); /* v */
+        data[IDX(i, 2) as usize] = b + 0.1 * (pi * i as sunrealtype * dx).sun_sin(); /* w */
         i += 1;
     }
 

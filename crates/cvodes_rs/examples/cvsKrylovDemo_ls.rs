@@ -603,11 +603,11 @@ fn f(t: sunrealtype, u: &N_Vector, udot: &N_Vector, user_data: &mut Option<Box<d
 
     /* Set diurnal rate coefficients. */
 
-    let s = (data.om * t).sin();
+    let s = (data.om * t).sun_sin();
     let q3: sunrealtype;
     if s > ZERO {
-        q3 = (-A3 / s).exp();
-        data.q4 = (-A4 / s).exp();
+        q3 = (-A3 / s).sun_exp();
+        data.q4 = (-A4 / s).sun_exp();
     } else {
         q3 = ZERO;
         data.q4 = ZERO;
@@ -628,8 +628,8 @@ fn f(t: sunrealtype, u: &N_Vector, udot: &N_Vector, user_data: &mut Option<Box<d
 
         let ydn = YMIN + ((jy as sunrealtype) - 0.5) * dely;
         let yup = ydn + dely;
-        let cydn = verdco * (0.2 * ydn).exp();
-        let cyup = verdco * (0.2 * yup).exp();
+        let cydn = verdco * (0.2 * ydn).sun_exp();
+        let cyup = verdco * (0.2 * yup).sun_exp();
         let idn: i32 = if jy == 0 { 1 } else { -1 };
         let iup: i32 = if jy == MY - 1 { -1 } else { 1 };
         for jx in 0..MX {
@@ -730,8 +730,8 @@ fn Precond(
         for jy in 0..MY {
             let ydn = YMIN + ((jy as sunrealtype) - 0.5) * dely;
             let yup = ydn + dely;
-            let cydn = verdco * (0.2 * ydn).exp();
-            let cyup = verdco * (0.2 * yup).exp();
+            let cydn = verdco * (0.2 * ydn).sun_exp();
+            let cyup = verdco * (0.2 * yup).sun_exp();
             let diag = -(cydn + cyup + TWO * hordco);
             for jx in 0..MX {
                 let c1 = udata[IJKth(1, jx, jy)];
