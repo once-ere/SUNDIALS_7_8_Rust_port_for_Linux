@@ -5,6 +5,6 @@ argv:
 launcher: mpirun --oversubscribe -np 4
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/idas/parallel/idasBruss_FSA_kry_bbd_p
 exit:     0 (OK)
-seconds:  0.706
+seconds:  0.606
 stdout:   1958 bytes, sha256 4324da8d04235591e002be2a052a98dc8eb50a98c86d6536502e6b611a155784
 stderr:   0 bytes

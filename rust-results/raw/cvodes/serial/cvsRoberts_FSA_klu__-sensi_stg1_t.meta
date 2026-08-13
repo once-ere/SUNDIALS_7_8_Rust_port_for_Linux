@@ -5,6 +5,6 @@ binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/
 argv:     -sensi stg1 t
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/rust-run/cvodes/serial/cvsRoberts_FSA_klu__-sensi_stg1_t
 exit:     0 (OK)
-seconds:  0.105
+seconds:  0.111
 stdout:   5262 bytes, sha256 68f3ec85041e86ae4d9732aabbd2f0b94a450ece7960c63a6b11a291f76df7ac
 stderr:   0 bytes

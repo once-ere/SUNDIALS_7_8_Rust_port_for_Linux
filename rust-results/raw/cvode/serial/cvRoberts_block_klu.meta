@@ -5,6 +5,6 @@ binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/
 argv:     
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/rust-run/cvode/serial/cvRoberts_block_klu
 exit:     0 (OK)
-seconds:  0.105
+seconds:  0.106
 stdout:   1198 bytes, sha256 34fb2cfe2ef09780deb1d7343776ddf00acc2dee63607fc8d2c9375700a62524
 stderr:   0 bytes

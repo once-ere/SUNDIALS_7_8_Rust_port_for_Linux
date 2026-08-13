@@ -5,6 +5,6 @@ binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/
 argv:     cvodes.max_order 3
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/rust-run/cvodes/serial/cvsAnalytic_mels__cvodes.max_order_3
 exit:     0 (OK)
-seconds:  0.105
+seconds:  0.106
 stdout:   771 bytes, sha256 8b5710623edaecafe59d5bc31e5dbc27359606ea35c9cd97fad908bce93f1bb3
 stderr:   0 bytes

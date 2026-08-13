@@ -5,6 +5,6 @@ argv:     4
 launcher: <direct>
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/arkode/C_openmp/ark_heat1D_omp__4
 exit:     0 (OK)
-seconds:  0.406
-stdout:   864 bytes, sha256 d2234a36033ca498768f9411c6749667dd2bf42e4f4c1377a891b151eeafc3de
+seconds:  0.405
+stdout:   864 bytes, sha256 61e8a560a4b0c02d115fb5b01e9a4c2aedcacaf4da9ffad46b8cbde1798f5042
 stderr:   0 bytes

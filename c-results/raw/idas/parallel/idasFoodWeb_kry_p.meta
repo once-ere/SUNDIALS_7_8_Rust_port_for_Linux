@@ -5,6 +5,6 @@ argv:
 launcher: mpirun --oversubscribe -np 4
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/idas/parallel/idasFoodWeb_kry_p
 exit:     0 (OK)
-seconds:  0.606
+seconds:  0.506
 stdout:   1771 bytes, sha256 dc1f5606206c05a80aa7edee061746ea3569a305e77a26babedceec777094448
 stderr:   0 bytes

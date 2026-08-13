@@ -5,6 +5,6 @@ argv:     4
 launcher: <direct>
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/idas/C_openmp/idasFoodWeb_kry_omp__4
 exit:     0 (OK)
-seconds:  1.807
-stdout:   1549 bytes, sha256 e5186fdada85076bb1cebed952b089e7572b933212ad0265431c660393d03c7c
+seconds:  1.907
+stdout:   1549 bytes, sha256 eb6c319cdc15c485e19419d25da0102e5da792708376dc3a76039aac45deaa95
 stderr:   0 bytes

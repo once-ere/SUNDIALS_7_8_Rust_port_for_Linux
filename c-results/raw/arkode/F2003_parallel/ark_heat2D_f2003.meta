@@ -5,6 +5,6 @@ argv:
 launcher: mpirun --oversubscribe -np 4
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/arkode/F2003_parallel/ark_heat2D_f2003
 exit:     0 (OK)
-seconds:  0.607
+seconds:  0.606
 stdout:   1222 bytes, sha256 d1b93ba7de36175793fa65c44befe0056489feeb50d988e8345366d1839ee295
 stderr:   0 bytes
