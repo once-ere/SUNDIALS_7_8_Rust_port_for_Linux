@@ -11,7 +11,7 @@ Last updated 2026-08-12. Read this file first when resuming.
 | deterministic `pow` vs **native glibc `pow`**, SUNDIALS domain corpus | **5,900,000 inputs, 0 mismatches** |
 | deterministic `pow` vs **native glibc `pow`**, unrestricted corpus | **20,000,000 inputs, 0 mismatches** |
 | pure-Rust libm vs a 113-bit `__float128` reference | **ten routines correctly rounded (0.5000 ulp)**; host glibc 2.43 reaches 0.5042 – 1.7848 |
-| **gate A** — `tools/verify_examples.sh all`, vs the shipped `.out` references | **145 IDENTICAL / 34 reference-side / 20 excluded**, and the same on Arch (§4). Was 153 / 26 / 20 under the host libm |
+| **gate A** — `tools/verify_examples.sh all`, vs the shipped `.out` references | **145 IDENTICAL / 34 reference-side / 20 excluded**, identical on five hosts spanning glibc 2.36–2.44 and musl (§4). Was 153 / 26 / 20 under the host libm |
 | port defects among those 26 | **0 — proven twice**, on two hosts and two glibc versions (§3) |
 | **gate B** — vs the upstream C rebuilt on the same machine | **175 of 190 comparable identical**; the 15 that differ are 8 libm + 7 sparse LU, **0 unaccounted for** (§3a) |
 
@@ -314,12 +314,13 @@ each distribution's container and hashes 1,000,000 results per function:
 of them. `sqrt` matches everywhere, as IEEE-754 requires.
 
 `tools/gate_in_container.sh` then ran the **full 199-variant gate natively
-inside three of those containers**, to find out whether those libm
-differences are output-observable:
+inside three of those containers** — still under the host libm — to find out
+whether those libm differences are output-observable:
 
 All four rows are **host-libm** measurements, kept as the historical
 baseline — they are the reason the pure-Rust libm exists, since the score
-moves with the host. Under the pure-Rust libm all four give 145 / 34 / 20.
+moves with the host. Under the pure-Rust libm all four give 145 / 34 / 20 —
+as does Alpine/musl, which this table lists as hopeless.
 
 | distro | libc | rustc | gate (host libm) | vs. reference host |
 |---|---|---|---|---|
@@ -343,17 +344,30 @@ from exactly one module, the wrappers at `arkode_lsrkstep.rs:83-98` (used
 from `:1158` and `:3255`), and glibc 2.44 changed all three. A libm-version
 effect, not a port defect.
 
-**§2a removed the cause — and the measurement, now made on four hosts, is
-more interesting than the prediction.** `tools/gate_in_container.sh debian:12
-fedora:41 archlinux:latest` was run under the pure-Rust libm, alongside
-`tools/verify_examples.sh all` on this host. All four give **145 / 34 / 20**,
-and not merely the same tally: the *same 34 variants*, name for name, with
-byte-identical DIFF lists across glibc **2.36, 2.40, 2.43 and 2.44** and two
-rustc versions. The host dependence this section documents is gone — Arch is
-not an outlier any more because nothing is.
+**§2a removed the cause — and the measurement, now made on five hosts across
+two libcs, is more interesting than the prediction.**
+`tools/gate_in_container.sh debian:12 fedora:41 archlinux:latest alpine:3.20`
+was run under the pure-Rust libm, alongside `tools/verify_examples.sh all` on
+this host:
+
+| host | libc | rustc | gate |
+|---|---|---|---|
+| Debian 12 | glibc 2.36 | 1.97.1 | 145 / 34 / 20 |
+| Fedora 41 | glibc 2.40 | 1.97.1 | 145 / 34 / 20 |
+| Ubuntu 26.04 (this host) | glibc 2.43 | 1.96.1 | 145 / 34 / 20 |
+| Arch | glibc 2.44 | 1.97.1 | 145 / 34 / 20 |
+| Alpine 3.20.10 | **musl 1.2.5** | 1.97.1 | 145 / 34 / 20 |
+
+Not merely the same tally: the *same 34 variants*, name for name. The five
+DIFF lists are byte-identical files, every one hashing to
+`6581e4918e5ab2c71ee6354f383a0f34` — `evidence/purerust-libm-gate/README.md`
+gives the recipe. Two rustc versions and two libcs are covered, so the result
+is toolchain-stable and libc-stable, not just distribution-stable. The host
+dependence this section documents is gone — Arch is not an outlier any more
+because nothing is.
 
 It did not restore the three variants, though, and it would be dishonest to
-imply otherwise. 153 became 145 on **all four hosts**, not just Arch. The
+imply otherwise. 153 became 145 on **all five hosts**, not just Arch. The
 eight that flipped from IDENTICAL to DIFF are exactly the eight that
 `differences/ab-host-libm.tsv` attributes to the libm — zero other class
 changes — and the three Arch ones are inside that eight. The port stopped
@@ -413,9 +427,9 @@ Nothing blocks the port; these would strengthen the evidence.
    real and was accepted: `sundials_libm.rs` is now a maintained component,
    with `tools/libm_differential.sh` as its regression test.
 
-   That measurement has now been made on four hosts, and it refutes the
-   item's premise. Debian 12, Fedora 41, this host and Arch all give
-   **145 / 34 / 20 with the same 34 variants**,
+   That measurement has now been made on five hosts, and it refutes the
+   item's premise. Debian 12, Fedora 41, this host, Arch and Alpine/musl all
+   give **145 / 34 / 20 with the same 34 variants**,
    so byte-identity *across hosts* is achieved — but the three variants do
    **not** reproduce against the shipped `.out`. They cannot: the references
    came from glibc's routines and the port no longer computes what glibc
