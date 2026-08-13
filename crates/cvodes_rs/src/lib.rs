@@ -49,6 +49,7 @@ pub use sundials_core::sundials_linearsolver;
 pub use sundials_core::sundials_logger;
 pub use sundials_core::sundials_libm;
 pub use sundials_core::sundials_math;
+pub use sundials_core::sundials_sparse_lu;
 pub use sundials_core::sundials_matrix;
 pub use sundials_core::sundials_memory;
 pub use sundials_core::sundials_nonlinearsolver;

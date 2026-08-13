@@ -32,12 +32,16 @@
 //! Deliberate choices, each of which differs from KLU's default and each of
 //! which is a limitation worth knowing:
 //!
-//! * **Pivoting is pure partial pivoting** — the largest magnitude
-//!   candidate in the column wins. KLU uses *threshold* partial pivoting
-//!   with a diagonal preference (`tol = 0.001`). Pure partial pivoting is
-//!   the more stable of the two and is what this port's dense solver
-//!   ([`crate::sundials_dense::SUNDlsMat_denseGETRF`]) already does, so the
-//!   two agree with each other.
+//! * **Threshold partial pivoting with a diagonal preference**, at KLU's
+//!   default `tol = 0.001`: the largest-magnitude candidate in the column
+//!   wins *unless* the diagonal entry is within a factor `tol` of it, in
+//!   which case the diagonal is kept. This is not a stylistic choice. The
+//!   matrices these examples produce carry exact unit rows -- `idaHeat2D`'s
+//!   boundary equations are literally `e_i` -- and pure partial pivoting
+//!   discards that unit diagonal in favour of a neighbouring `-1/dx^2`,
+//!   which mixes the boundary and interior unknowns and lets round-off
+//!   into components the problem pins exactly. Keeping the diagonal is
+//!   what KLU does and what those examples are posed against.
 //! * **No fill-reducing column ordering.** Columns are eliminated in their
 //!   natural order; KLU applies AMD. For the matrices these examples
 //!   produce — 3x3 dense blocks, a block-diagonal system with 3x3 blocks,
@@ -58,6 +62,11 @@
 //! implementation of it.
 
 use crate::sundials_types::*;
+
+/// KLU's default partial-pivoting threshold. The diagonal entry is kept as
+/// the pivot whenever its magnitude is at least this fraction of the
+/// largest candidate in the column.
+pub const PIVOT_TOL: sunrealtype = 0.001;
 
 /// What this factorization is *not* good for, stated once so a caller does
 /// not have to infer it: there is no fill-reducing ordering, so on a large
@@ -176,9 +185,12 @@ impl SparseLU {
             let top = sparse_lower_solve(n, ap, ai, ax, k, &pinv, &lp, &li, &lx, &mut w)?;
 
             // ---- choose the pivot: largest magnitude among rows that are
-            //      not yet pivotal ---------------------------------------
+            //      not yet pivotal, unless the diagonal is within `PIVOT_TOL`
+            //      of it, in which case keep the diagonal ------------------
             let mut ipiv = unset;
             let mut best = -1.0f64;
+            let mut diag = 0.0f64;
+            let mut diag_free = false;
             for t in top..n {
                 let i = w.xi[t];
                 if pinv[i] == unset {
@@ -186,6 +198,10 @@ impl SparseLU {
                     if a > best {
                         best = a;
                         ipiv = i;
+                    }
+                    if i == k {
+                        diag = a;
+                        diag_free = true;
                     }
                 } else {
                     // already pivotal -> this entry belongs to U
@@ -195,6 +211,9 @@ impl SparseLU {
             }
             if ipiv == unset || !(best > 0.0) {
                 return Err(SparseLuError::Singular(k));
+            }
+            if diag_free && diag >= PIVOT_TOL * best {
+                ipiv = k;
             }
 
             let pivot = w.x[ipiv];
