@@ -1,44 +1,45 @@
 # current_status.md — SUNDIALS_7_8_Rust_port_for_Linux
 
-**Status: the port is complete and green on Linux / glibc / x86-64.**
-Session of 2026-08-10. Read this file first when resuming.
+**Status: the port is complete and green on Linux / glibc / x86-64, and the
+host C library is no longer on its numerical path at all.**
+Last updated 2026-08-12. Read this file first when resuming.
 
 | gate | result |
 |---|---|
-| `cargo build --workspace` (Linux x86-64) | **0 errors, 0 warnings** |
-| `cargo test --workspace --lib` | **25 passed, 0 failed** |
+| `cargo build --workspace` (Linux x86-64) | **0 errors, 0 warnings**, with and without `--features host-libm` |
+| `cargo test --workspace --lib` | **39 passed, 0 failed** |
 | deterministic `pow` vs **native glibc `pow`**, SUNDIALS domain corpus | **5,900,000 inputs, 0 mismatches** |
 | deterministic `pow` vs **native glibc `pow`**, unrestricted corpus | **20,000,000 inputs, 0 mismatches** |
-| `tools/verify_examples.sh all` (199 reference variants) | **153 IDENTICAL / 26 reference-side divergences / 20 excluded (KLU/SuperLU)** |
-| port defects among the 26 | **0 — proven natively**: all 26 are byte-identical to the pristine upstream C built by gcc 13.3.0 on this host |
+| pure-Rust libm vs a 113-bit `__float128` reference | **ten routines correctly rounded (0.5000 ulp)**; host glibc 2.43 reaches 0.5042 – 1.7848 |
+| **gate A** — `tools/verify_examples.sh all`, vs the shipped `.out` references | **153 IDENTICAL / 26 reference-side / 20 excluded (KLU/SuperLU)** |
+| port defects among those 26 | **0 — proven twice**, on two hosts and two glibc versions (§3) |
+| **gate B** — vs the upstream C rebuilt on the same machine | **175 of 190 comparable identical**; the 15 that differ are 8 libm + 7 sparse LU, **0 unaccounted for** (§3a) |
 
-Measured host: Ubuntu 24.04 x86-64, glibc 2.39, gcc 13.3.0, rustc/cargo
-1.93.1, CPU with FMA — running as a WSL2 guest on Windows 11, which is a
-genuine Linux/glibc/x86-64 userspace and therefore a valid target for
-every claim above. See "Open items" for what a bare-metal re-run would add.
+Two hosts are involved, and every figure above belongs to one of them:
 
-Raw artefacts for all of it are committed under
-[`evidence/linux-x86_64-glibc239/`](evidence/linux-x86_64-glibc239/).
+* **gate A**, the `pow` differential and the distribution sweep — Ubuntu
+  24.04 x86-64, glibc 2.39, gcc 13.3.0, rustc 1.93.1, **a WSL2 guest on
+  Windows 11**. Artefacts: [`evidence/linux-x86_64-glibc239/`](evidence/linux-x86_64-glibc239/).
+* **gate B**, the libm differential and everything after it — Ubuntu 26.04
+  x86-64, glibc 2.43, gcc 15.2.0, rustc 1.96.1, 24 cores, **bare metal**
+  (`systemd-detect-virt` → `none`). Artefacts:
+  [`evidence/ubuntu-2604-glibc243/`](evidence/ubuntu-2604-glibc243/).
 
 > ### Published
 >
 > `main` is on
 > `https://github.com/once-ere/SUNDIALS_7_8_Rust_port_for_Linux.git`.
-> All work lands directly on `main`; there is no feature branch and no
-> pull request to review, because the branch *is* the deliverable.
+> Work lands **directly on `main`** — no feature branch, no PR to review —
+> confirmed as the preference on 2026-08-12. The one exception so far was
+> PR #1 (the libm and sparse LU, ~350k lines), merged as `299a697`; a change
+> that large is worth a diff on GitHub, and the branch was deleted after.
 >
-> Note for whoever automates this next: an agent session cannot push from
-> here unattended. `credential.helper` is globally set to **`manager-core`**,
-> a name Git Credential Manager retired — no such binary exists on this
-> machine (the installed one is
-> `C:\Program Files\Git\mingw64\bin\git-credential-manager.exe`), and GCM
-> will not release the stored `git:https://github.com` credential without a
-> prompt. The SSH key at `~/.ssh/id_ed25519` in the WSL Ubuntu guest is not
-> registered on the account (`Permission denied (publickey)`). Fix with:
->
-> ```bash
-> git config --global credential.helper manager
-> ```
+> The credential note that used to live here applied to the **Windows/WSL2
+> machine**, where `credential.helper` was set to the retired `manager-core`
+> and pushes needed a prompt. It does not apply to the bare-metal Ubuntu
+> 26.04 host, which pushes unattended over HTTPS without trouble. If you are
+> back on the Windows box and a push hangs, that is the cause; fix with
+> `git config --global credential.helper manager`.
 
 ---
 
@@ -47,16 +48,19 @@ Raw artefacts for all of it are committed under
 A pure-Rust port of SUNDIALS 7.8.0 (LLNL) scoped to **Linux on Intel/AMD
 x86-64** — Ubuntu 24.04/26.04 and, by the argument in §4, the Debian, Arch
 and Fedora families. No `unsafe`, no FFI, no external crates, `std` only.
-Seven crates, 141 modules, one per upstream C file, keeping the exact C
-names, constants and return-flag conventions.
+Seven crates, 144 modules, one per upstream C file, and 119 examples,
+keeping the exact C names, constants and return-flag conventions.
 
 It **reuses the entire crate tree** of the sibling port
 `SUNDIALS_7_8_Rust_port_for_AppleSilicon_macos` (github.com/once-ere/…),
-which is where the 141 modules were originally translated from the C
+which is where the solver modules were originally translated from the C
 sources. Not one line of solver code was re-derived. What is new here is
-the *target-platform* work: the `pow` question below, a native x86-64
-oracle, a re-run of the whole verification gate under glibc, and the
-documentation that scopes every claim to Linux instead of macOS.
+the *target-platform* work — the `pow` question below, a native x86-64
+oracle, a re-run of the whole verification gate under glibc, documentation
+scoped to Linux — and then the two substitutions that removed the host C
+library from the numerical path: a pure-Rust libm (§2a) and a pure-Rust
+sparse LU (§2b), which together grew the tree from 141 modules and 108
+examples to 144 and 119.
 
 ## 2. The `pow` question — resolved
 
@@ -96,6 +100,68 @@ arm64-built oracle, which is exactly the doubt that document raised.
 No new `pow` source was written: writing one would have replaced a routine
 already bit-exact against the target with an unmeasured rewrite.
 
+## 2a. The pure-Rust libm — the host libm is gone
+
+`pow` was the first substitution and for a long time the only one. It is now
+one of thirteen. `crates/sundials_core/src/sundials_libm.rs` implements
+`exp`, `log`, `pow`, `expm1`, `log1p`, `sin`, `cos`, `atan`, `asin`, `acos`,
+`sinh`, `cosh` and `acosh`. `exp`/`log`/`pow` are the ARM optimized-routines
+kernels via musl (MIT), the same source glibc >= 2.28 ships; the other ten
+are written here on a double-double core with an exact Payne-Hanek reduction,
+their constant tables generated by `tools/gen_libm_constants.py`.
+
+Call sites read `x.sun_sin()`, `x.sun_exp()`, … through a `SunMath` trait.
+The rename is what makes the host unreachable: Rust resolves inherent methods
+before trait ones, so `x.sin()` could not have been redirected. The only
+`f64` methods left in `crates/` are `sqrt`, `mul_add`, `abs`, `ceil`, `round`
+and `copysign` — all IEEE-754 exact.
+
+`tools/libm_differential.sh` measures each against a 113-bit `__float128`
+reference, 1,000,000 samples per corpus:
+
+| function | pure Rust | host glibc 2.43 |
+|---|---:|---:|
+| `exp`, `log` | 0.5003 – 0.5071 ulp | identical, bit for bit (same source) |
+| `acosh` | 0.5000 ulp | 0.5000 ulp (independent, both correctly rounded) |
+| `sin`, `cos`, `atan`, `asin`, `acos` | **0.5000 ulp** | 0.5042 – 0.5186 ulp |
+| `expm1`, `log1p` | **0.5000 ulp** | 0.7783 – 0.8414 ulp |
+| `sinh`, `cosh` | **0.5000 ulp** | 0.9883 – 1.7848 ulp |
+
+Bit-identity with glibc is impossible here, not merely unachieved: glibc uses
+the LGPL IBM Accurate Mathematical Library for these. The alternative was an
+fdlibm clone at ~0.55 ulp, which would have disagreed with glibc *more* often.
+Correct rounding is both more accurate and the closer match. Details in
+[`LIBM.md`](LIBM.md).
+
+A `host-libm` cargo feature (default off) switches the thirteen methods back
+to the host. It exists for `tools/ab_host_libm.sh` and is what keeps "0 port
+defects" a measurement. **Never enable it for a production build.**
+
+## 2b. The pure-Rust sparse LU — KLU is gone too
+
+SuiteSparse KLU is LGPL-2.1+: not translatable into this BSD-3 tree, not
+callable without FFI. That is why the eleven `*_klu` examples were unportable.
+`crates/sundials_core/src/sundials_sparse_lu.rs` replaces it — a left-looking
+sparse LU (Gilbert & Peierls 1988) under a faithful translation of SUNDIALS'
+own BSD-3 `sunlinsol_klu.c`. Nothing derives from KLU, CSparse or any
+SuiteSparse source. **All 11 `*_klu` examples are ported; 4 are byte-identical
+to the C.**
+
+It uses KLU's documented default pivoting — threshold partial with a diagonal
+preference at `tol = 0.001` — and that was forced, not chosen. `idaHeat2D_klu`'s
+boundary equations are literally `e_i`; largest-magnitude pivoting discards
+that `1` for a neighbouring `-1/dx^2`, mixes boundary and interior unknowns,
+and the run diverged where the C decays to zero. Matching KLU's rule fixed it
+and made two further variants byte-identical.
+
+**This substitution has no control build** — there is no KLU to switch back
+to — so it cannot be attributed the way the libm is. It is verified directly:
+against dense Gaussian elimination on 300 random sparse systems (worst
+relative residual 7.3e-16), and for `idaHeat2D_klu` its hand-packed CSC
+Jacobian checked entry by entry against an independent reference and against
+finite differences of the residual (`cargo test -p ida_rs --example
+idaHeat2D_klu`).
+
 ## 3. Verification gate, Linux vs macOS
 
 | | macOS / arm64 (inherited) | **Linux / x86-64 (this repo)** |
@@ -105,13 +171,18 @@ already bit-exact against the target with an unmeasured rewrite.
 | excluded (KLU/SuperLU) | 20 | 20 |
 | port defects | 0 | **0** |
 
-26 variants that diverged on macOS are byte-identical here. That is the
-predicted effect and the main evidence for the platform claim: the host
-libm now *is* the libm that generated the upstream `.out` files. The port
-takes `sin`, `cos`, `asin`, `acos`, `atan`, `sinh`, `cosh`, `acosh`, `exp`
-and `ln` from the host through `f64`'s unspecified-precision methods; on a
-glibc host that is glibc, so the mismatch the macOS port had to document
-away simply is not there.
+26 variants that diverged on macOS are byte-identical here. That was the
+predicted effect and the original evidence for the platform claim: at the
+time, the port took `sin`, `cos`, `asin`, `acos`, `atan`, `sinh`, `cosh`,
+`acosh`, `exp` and `ln` from the host through `f64`'s unspecified-precision
+methods, so on a glibc host they landed on the very libm that generated the
+upstream `.out` files, and the mismatch macOS had to document away was not
+there.
+
+**That is now history rather than mechanism.** Since §2a the port does not
+call the host for any of them. The gate A numbers above were measured under
+the old arrangement and have not been re-run since; gate B (§3a) is the
+current measurement, and it is the one that reflects the tree as it stands.
 
 The 26 that remain are **all reference-side, and that is now proven on
 this host rather than inherited.** A divergence from a shipped `.out` is a
@@ -152,6 +223,46 @@ anomalies (`cv[s]Pendulum_dns`), five trailing-whitespace-stripped
 references (`cvsKrylovDemo_ls` x4, `idasAkzoNob_ASAi_dns`), and two
 references missing a final blank line the source prints unconditionally
 (`ark_conserved_exp_entropy_ark 1 1`, `ark_dissipated_exp_entropy 1 1`).
+
+## 3a. Gate B — Rust vs C rebuilt on the same machine
+
+Gate A compares against a reference file shipped years ago. Gate B compares
+against the upstream C compiled from source on the same machine, minutes
+apart, by the same toolchain — a different question, not a better answer, and
+neither supersedes the other. Both cover the same 199 variants;
+`python3 tools/cross_gate.py` asserts that before comparing and prints the
+cross-tabulation.
+
+| | gate A: vs shipped `.out` | gate B: vs C rebuilt here |
+|---|---|---|
+| host | Ubuntu 24.04, glibc 2.39, host libm | Ubuntu 26.04, glibc 2.43, pure-Rust libm |
+| KLU examples | 20 excluded with SuperLU | 11 ported and compared, 9 SuperLU still out |
+| identical | 153 of 199 | **175 of 199** |
+
+**175 is not a correction of 153.** Three results come out of putting them
+side by side, none visible from either alone:
+
+1. **All 26** of gate A's divergences are byte-identical to pristine C rebuilt
+   here — "0 port defects" reproduced on a second distribution, glibc,
+   compiler and rustc, against a reference *built* rather than downloaded.
+2. Gate B's 15 divergences **decompose exactly**: 8 to the libm (the
+   `host-libm` control build restores every one), 7 to the sparse LU (all
+   `*_klu`, no control build possible), **0 unaccounted for**.
+3. The 8 the control build names are *precisely* the 8 that flipped from
+   IDENTICAL under gate A. Two experiments sharing nothing but the source
+   tree pick the same set.
+
+The pipeline was re-run from source afterwards: of the 190 C captures in the
+compared set and all 199 Rust captures, **not one byte changed**. Six captures
+outside the compared set moved — five OpenMP examples, whose numbers genuinely
+differ run to run, and one MPI example whose lines merely come back in a
+different order with every number identical.
+
+Everything is under
+[`evidence/ubuntu-2604-glibc243/`](evidence/ubuntu-2604-glibc243/), raw
+captures included, produced by the pipeline in the sibling working repository
+[`SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu`](https://github.com/once-ere/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu)
+and vendored here by `tools/vendor_evidence.sh`.
 
 ## 4. Distribution coverage — measured, and one claim retracted
 
@@ -196,14 +307,20 @@ differences are output-observable:
 Debian 13, Fedora 41. Debian 12's `atan` difference is real but not
 output-observable: no variant evaluates `atan` where 2.36 and 2.39 disagree.
 
-**Arch (glibc 2.44): three variants diverge** —
+**Arch (glibc 2.44): three variants diverged** —
 `ark_analytic_lsrk_domeigest` (both argv variants) and
 `ark_analytic_lsrk_varjac`. Predicted from the fingerprint table before the
-gate was run, then confirmed by it: `sinh`, `cosh` and `acosh` are called
-from exactly one place in the library, `arkode_lsrkstep.rs:87`, and glibc
-2.44 changed all three. A libm-version effect, not a port defect — the port
-runs correctly there, but three reference outputs will not reproduce
-byte-for-byte.
+gate was run, then confirmed by it: `sinh`, `cosh` and `acosh` are reached
+from exactly one module, the wrappers at `arkode_lsrkstep.rs:83-98` (used
+from `:1158` and `:3255`), and glibc 2.44 changed all three. A libm-version
+effect, not a port defect.
+
+**§2a removes the cause.** Those three functions no longer call the host, so
+the mechanism behind the Arch divergence is gone. That is a prediction, not a
+measurement: **the gate has not been re-run on Arch since the pure-Rust libm
+landed**, and this whole table describes host-libm behaviour. Re-running
+`tools/gate_in_container.sh archlinux:latest` would settle it and is the
+cheapest remaining piece of evidence in this file.
 
 **musl is out of scope**, now for a measured reason: `sin`, `cos`, `exp`,
 `log`, `asin`, `acos`, `atan` and the hyperbolics all differ from glibc's.
@@ -214,14 +331,15 @@ the host `pow`.
 
 Nothing blocks the port; these would strengthen the evidence.
 
-1. **Bare-metal re-run.** All numbers above come from WSL2 (including the
-   containers, which share its kernel). That is a real Linux kernel with
-   real glibc and real x86-64 instructions, so the arithmetic cannot
-   differ — and §4's four-distribution agreement, across three glibc
-   versions and two rustc versions, is strong corroboration that nothing
-   about the environment is load-bearing. A run on a bare-metal Ubuntu box
-   would still remove the last of the question. Re-run:
-   `tools/pow_differential.sh all` and `tools/verify_examples.sh all`.
+1. ~~**Bare-metal re-run.**~~ **Largely done.** Gate B, the libm
+   differential and the `pow` differential were all run on a **bare-metal**
+   Ubuntu 26.04 host (`systemd-detect-virt` -> `none`, 24 cores), and the
+   substantive part of the port-defect proof came out the same there: all 26
+   of gate A's divergences are byte-identical to pristine C rebuilt on that
+   machine (§3a). What has *not* been re-run bare-metal is gate A itself —
+   `tools/verify_examples.sh all` against the shipped `.out` files, whose
+   153 / 26 / 20 still comes from the WSL2 host. Cheap to close:
+   `tools/verify_examples.sh all` on the Ubuntu 26.04 box.
 2. ~~**Native pristine-C rebuild for the content divergences.**~~ **Done.**
    Upstream SUNDIALS 7.8.0 was built here with cmake + gcc 13.3.0 and all
    26 divergent variants compared three ways; Rust == pristine C in every
@@ -232,13 +350,18 @@ Nothing blocks the port; these would strengthen the evidence.
    re-run natively on three of them. Verified coverage is glibc 2.36–2.41;
    Arch's 2.44 moves three LSRK variants. `tools/glibc_sweep.sh`,
    `tools/gate_in_container.sh`.
-4. **Arch / glibc 2.44, if byte-identity there is ever wanted.** The three
-   divergent variants all trace to `SUNRsinh`/`SUNRcosh`/`SUNRacosh` in
-   `arkode_lsrkstep.rs:87`. Porting those three the way `pow` was ported —
-   a host-independent Rust implementation of the glibc algorithm — would
-   close it. Not done: it would fix one distribution's three variants at
-   the cost of a second hand-maintained libm routine set, and the port is
-   correct there either way.
+4. ~~**Arch / glibc 2.44, if byte-identity there is ever wanted.**~~
+   **Done — and far past what this item asked for.** It proposed porting
+   `SUNRsinh`/`SUNRcosh`/`SUNRacosh` "the way `pow` was ported", and judged
+   it not worth a second hand-maintained routine set. §2a did exactly that
+   for **all thirteen** functions instead, which removes the host dependence
+   everywhere rather than in one stepper. The cost the item worried about is
+   real and was accepted: `sundials_libm.rs` is now a maintained component,
+   with `tools/libm_differential.sh` as its regression test.
+
+   What remains is the measurement: **re-run the gate on Arch** to confirm
+   the three variants now reproduce. `tools/gate_in_container.sh
+   archlinux:latest`.
 5. **musl**, if it is ever wanted: out of scope, for the measured reason
    in §4.
 
@@ -250,18 +373,26 @@ On a Linux x86-64 host with rustup and a C compiler:
 git clone https://github.com/once-ere/SUNDIALS_7_8_Rust_port_for_Linux.git
 cd SUNDIALS_7_8_Rust_port_for_Linux
 cargo build --workspace          # 0 warnings
-cargo test  --workspace --lib    # 25 passed
+cargo test  --workspace --lib    # 39 passed
 tools/pow_differential.sh all    # 0 mismatches / 25.9M inputs
+tools/libm_differential.sh 1000000   # the ulp table in §2a
 ```
 
-The example gate additionally needs the read-only upstream SUNDIALS 7.8.0
-C tree as this workspace's **parent** directory, because it reads
-`../examples/<solver>/<serial dir>/*.out`:
+The upstream example tree is **vendored** under `examples/`, so the reference
+gate needs nothing else (it still falls back to a parent-directory tree if one
+is present):
 
 ```bash
-tools/verify_examples.sh all     # then read logs/summary.txt
+tools/verify_examples.sh all     # gate A; then read logs/summary.txt
 tools/classify_diffs.sh          # second pass over the non-IDENTICAL ones
+python3 tools/cross_gate.py      # gate A and gate B, cross-tabulated
 ```
+
+Gate B is *not* reproduced from this repository — it needs a C toolchain and
+the full pipeline, which live in the sibling working repo
+`SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu`. Its results are vendored here
+by `tools/vendor_evidence.sh`, and each subdirectory's `README.md` carries the
+commands that produced it.
 
 To reproduce the port-defect proof, which needs a native C build of the
 upstream tree (out of source; the tree stays read-only):
@@ -281,17 +412,26 @@ strips CRLF from `tools/*.sh`, which a Windows checkout can introduce;
 ## 7. Provenance
 
 * Upstream: SUNDIALS 7.8.0, LLNL, BSD-3-Clause. Read-only reference at
-  `C:\Users\nsh\Developer\sundials-7.8.0` on the machine this was built on.
+  `C:\Users\nsh\Developer\sundials-7.8.0` on the Windows/WSL2 machine and
+  `/home/nsh/Developer/sundials-7.8.0` on the Ubuntu 26.04 one. The tree is
+  also vendored under `examples/`.
 * Crate tree: inherited wholesale from
   `SUNDIALS_7_8_Rust_port_for_AppleSilicon_macos`, BSD-3-Clause, same
   author lineage. `ARCHITECTURE.md`, `PROGRESS.md` and the body of
   `VERIFICATION.md` come from there unchanged and remain accurate — they
   describe the translation, which is platform-independent.
-* Deterministic `pow`: ARM optimized-routines via musl `src/math/pow.c`,
-  MIT, (c) 2018 Arm Limited — the algorithm glibc >= 2.28 ships. See
-  `NOTICE` and `POW_FMA_EXACTNESS.md`.
-* New in this repository: `tools/pow_oracle.c`,
-  `tools/pow_differential.sh`, `tools/classify_diffs.sh`,
-  `tools/wsl_sync_build.sh`, the two differential unit tests,
-  `.gitattributes`, this file, and the Linux scoping in `README.md`,
-  `CLAUDE.md`, `POW_FMA_EXACTNESS.md` and `VERIFICATION.md`.
+* `exp`, `log`, `pow` in `sundials_libm.rs`, and the deterministic `pow` in
+  `sundials_math.rs`: ARM optimized-routines via musl `src/math/`, MIT,
+  (c) 2018 Arm Limited — the algorithm glibc >= 2.28 ships. See `NOTICE`,
+  `LIBM.md` and `POW_FMA_EXACTNESS.md`.
+* The double-double core and the ten routines on it are original here;
+  `sundials_sparse_lu.rs` is an independent implementation of Gilbert-Peierls
+  from the literature. **No SuiteSparse code — KLU, BTF, AMD or CSparse — was
+  read, copied or derived from.**
+* New in this repository: `tools/pow_oracle.c`, `tools/pow_differential.sh`,
+  `tools/classify_diffs.sh`, `tools/wsl_sync_build.sh`,
+  `tools/gen_libm_constants.py`, `tools/libm_differential.sh`,
+  `tools/ab_host_libm.sh`, `tools/cross_gate.py`,
+  `tools/vendor_evidence.sh`, the differential unit tests, `.gitattributes`,
+  this file, `LIBM.md`, and the Linux scoping in `README.md`, `CLAUDE.md`,
+  `POW_FMA_EXACTNESS.md` and `VERIFICATION.md`.
