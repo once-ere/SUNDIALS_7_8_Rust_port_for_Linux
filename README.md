@@ -354,10 +354,19 @@ the note after the table.
 everywhere. The containers also used a *newer* rustc than the host, so the
 result is toolchain-stable as well as distribution-stable.)
 
-**Conclusion.** The port and its gate carry unchanged to Debian 12, Ubuntu
-24.04, Debian 13 and Fedora 41 — glibc 2.36 through 2.41. Debian 12's
-`atan` difference exists but is not output-observable: nothing in the
-199 variants evaluates `atan` where 2.36 and 2.39 disagree.
+**Conclusion.** **Verified coverage under the host libm: glibc 2.36 through 2.41** — but the
+four distributions were not equally verified, and this used to be blurred.
+The gate was actually *run* on Debian 12, Ubuntu 24.04, Fedora 41 and Arch.
+**Debian 13 was only fingerprinted** by `tools/glibc_sweep.sh`, which found
+its 2.41 libm matching 2.39; there is no `gate-debian-13.txt` in
+`evidence/linux-x86_64-glibc239/`. A fingerprint match is a prediction that
+nothing is output-observable, not a measurement that nothing is — which is
+the entire reason `gate_in_container.sh` exists. Under the pure-Rust libm
+Debian 13 *has* now been gate-run, so glibc 2.41 is properly covered for the
+current build.
+
+Debian 12's `atan` difference is real but not output-observable: nothing in
+the 199 variants evaluates `atan` where 2.36 and 2.39 disagree.
 
 On **Arch (glibc 2.44)** exactly three more variants diverge —
 `ark_analytic_lsrk_domeigest` (both argv variants) and
@@ -369,9 +378,10 @@ used from two sites in that same file — and glibc 2.44 changed all three.
 
 **This whole section describes host-libm behaviour, and the gate has since
 been re-run without it — on four hosts.** Under the pure-Rust libm, glibc
-**2.36 (Debian 12), 2.40 (Fedora 41), 2.43 (Ubuntu 26.04) and 2.44 (Arch)**
-all score **145 / 34 / 20**, and not merely the same tally: the same 34
-variants, name for name, with byte-identical DIFF lists. Arch is no longer an
+**2.36 (Debian 12), 2.40 (Fedora 41), 2.41 (Debian 13), 2.43 (Ubuntu 26.04)
+and 2.44 (Arch)** plus **musl 1.2.5 (Alpine)** all score **145 / 34 / 20**,
+and not merely the same tally: the same 34 variants, name for name, with
+byte-identical DIFF lists — six hosts, two libcs. Arch is no longer an
 outlier because there is no outlier — the score no longer depends on the host.
 Two rustc versions are covered as well.
 

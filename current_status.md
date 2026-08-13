@@ -11,7 +11,7 @@ Last updated 2026-08-12. Read this file first when resuming.
 | deterministic `pow` vs **native glibc `pow`**, SUNDIALS domain corpus | **5,900,000 inputs, 0 mismatches** |
 | deterministic `pow` vs **native glibc `pow`**, unrestricted corpus | **20,000,000 inputs, 0 mismatches** |
 | pure-Rust libm vs a 113-bit `__float128` reference | **ten routines correctly rounded (0.5000 ulp)**; host glibc 2.43 reaches 0.5042 – 1.7848 |
-| **gate A** — `tools/verify_examples.sh all`, vs the shipped `.out` references | **145 IDENTICAL / 34 reference-side / 20 excluded**, identical on five hosts spanning glibc 2.36–2.44 and musl (§4). Was 153 / 26 / 20 under the host libm |
+| **gate A** — `tools/verify_examples.sh all`, vs the shipped `.out` references | **145 IDENTICAL / 34 reference-side / 20 excluded**, identical on six hosts spanning glibc 2.36–2.44 and musl (§4). Was 153 / 26 / 20 under the host libm |
 | port defects among those 26 | **0 — proven twice**, on two hosts and two glibc versions (§3) |
 | **gate B** — vs the upstream C rebuilt on the same machine | **175 of 190 comparable identical**; the 15 that differ are 8 libm + 7 sparse LU, **0 unaccounted for** (§3a) |
 
@@ -332,9 +332,19 @@ as does Alpine/musl, which this table lists as hopeless.
 0 build failures and 0 run failures everywhere; the containers used a
 *newer* rustc than the host, so the result is toolchain-stable too.
 
-**Verified coverage: glibc 2.36 through 2.41** — Debian 12, Ubuntu 24.04,
-Debian 13, Fedora 41. Debian 12's `atan` difference is real but not
-output-observable: no variant evaluates `atan` where 2.36 and 2.39 disagree.
+**Verified coverage under the host libm: glibc 2.36 through 2.41** — but the
+four distributions were not equally verified, and this used to be blurred.
+The gate was actually *run* on Debian 12, Ubuntu 24.04, Fedora 41 and Arch.
+**Debian 13 was only fingerprinted** by `tools/glibc_sweep.sh`, which found
+its 2.41 libm matching 2.39; there is no `gate-debian-13.txt` in
+`evidence/linux-x86_64-glibc239/`. A fingerprint match is a prediction that
+nothing is output-observable, not a measurement that nothing is — which is
+the entire reason `gate_in_container.sh` exists. Under the pure-Rust libm
+Debian 13 *has* now been gate-run, so glibc 2.41 is properly covered for the
+current build.
+
+Debian 12's `atan` difference is real but not output-observable: nothing in
+the 199 variants evaluates `atan` where 2.36 and 2.39 disagree.
 
 **Arch (glibc 2.44): three variants diverged** —
 `ark_analytic_lsrk_domeigest` (both argv variants) and
@@ -344,9 +354,9 @@ from exactly one module, the wrappers at `arkode_lsrkstep.rs:83-98` (used
 from `:1158` and `:3255`), and glibc 2.44 changed all three. A libm-version
 effect, not a port defect.
 
-**§2a removed the cause — and the measurement, now made on five hosts across
+**§2a removed the cause — and the measurement, now made on six hosts across
 two libcs, is more interesting than the prediction.**
-`tools/gate_in_container.sh debian:12 fedora:41 archlinux:latest alpine:3.20`
+`tools/gate_in_container.sh debian:12 debian:13 fedora:41 archlinux:latest alpine:3.20`
 was run under the pure-Rust libm, alongside `tools/verify_examples.sh all` on
 this host:
 
@@ -354,11 +364,12 @@ this host:
 |---|---|---|---|
 | Debian 12 | glibc 2.36 | 1.97.1 | 145 / 34 / 20 |
 | Fedora 41 | glibc 2.40 | 1.97.1 | 145 / 34 / 20 |
+| Debian 13 | glibc 2.41 | 1.97.1 | 145 / 34 / 20 |
 | Ubuntu 26.04 (this host) | glibc 2.43 | 1.96.1 | 145 / 34 / 20 |
 | Arch | glibc 2.44 | 1.97.1 | 145 / 34 / 20 |
 | Alpine 3.20.10 | **musl 1.2.5** | 1.97.1 | 145 / 34 / 20 |
 
-Not merely the same tally: the *same 34 variants*, name for name. The five
+Not merely the same tally: the *same 34 variants*, name for name. The six
 DIFF lists are byte-identical files, every one hashing to
 `6581e4918e5ab2c71ee6354f383a0f34` — `evidence/purerust-libm-gate/README.md`
 gives the recipe. Two rustc versions and two libcs are covered, so the result
@@ -367,7 +378,7 @@ dependence this section documents is gone — Arch is not an outlier any more
 because nothing is.
 
 It did not restore the three variants, though, and it would be dishonest to
-imply otherwise. 153 became 145 on **all five hosts**, not just Arch. The
+imply otherwise. 153 became 145 on **all six hosts**, not just Arch. The
 eight that flipped from IDENTICAL to DIFF are exactly the eight that
 `differences/ab-host-libm.tsv` attributes to the libm — zero other class
 changes — and the three Arch ones are inside that eight. The port stopped
@@ -427,9 +438,9 @@ Nothing blocks the port; these would strengthen the evidence.
    real and was accepted: `sundials_libm.rs` is now a maintained component,
    with `tools/libm_differential.sh` as its regression test.
 
-   That measurement has now been made on five hosts, and it refutes the
-   item's premise. Debian 12, Fedora 41, this host, Arch and Alpine/musl all
-   give **145 / 34 / 20 with the same 34 variants**,
+   That measurement has now been made on six hosts, and it refutes the
+   item's premise. Debian 12, Debian 13, Fedora 41, this host, Arch and
+   Alpine/musl all give **145 / 34 / 20 with the same 34 variants**,
    so byte-identity *across hosts* is achieved — but the three variants do
    **not** reproduce against the shipped `.out`. They cannot: the references
    came from glibc's routines and the port no longer computes what glibc

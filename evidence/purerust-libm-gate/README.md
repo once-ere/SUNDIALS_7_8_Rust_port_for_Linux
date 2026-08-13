@@ -14,6 +14,7 @@ are that re-run.
 | **pure-Rust libm** | **Ubuntu 26.04** | **2.43** | **1.96.1** | **145 / 34 / 20** |
 | **pure-Rust libm** | **Debian 12** | **2.36** | **1.97.1** | **145 / 34 / 20** |
 | **pure-Rust libm** | **Fedora 41** | **2.40** | **1.97.1** | **145 / 34 / 20** |
+| **pure-Rust libm** | **Debian 13** | **2.41** | **1.97.1** | **145 / 34 / 20** |
 | **pure-Rust libm** | **Arch** | **2.44** | **1.97.1** | **145 / 34 / 20** |
 | **pure-Rust libm** | **Alpine 3.20.10** | **musl 1.2.5** | **1.97.1** | **145 / 34 / 20** |
 
@@ -22,8 +23,8 @@ Two results, and the second is the one that matters.
 **1. The host dependence is gone.** Under the host libm the score depended on
 which glibc you linked: 153 on 2.36 through 2.41, but 150 on Arch's 2.44,
 because that release changed `sinh`, `cosh` and `acosh`. Under the pure-Rust
-libm, **five hosts spanning glibc 2.36, 2.40, 2.43, 2.44 and musl 1.2.5 all
-report 145 / 34 / 20 — and the same 34 variants, name for name.** The DIFF
+libm, **six hosts spanning glibc 2.36, 2.40, 2.41, 2.43, 2.44 and musl 1.2.5
+all report 145 / 34 / 20 — and the same 34 variants, name for name.** The DIFF
 lists are byte-identical files. Arch is no longer an outlier; there is no
 outlier, because the score no longer depends on the host at all. Two rustc
 versions are covered too (1.96.1 on the host, 1.97.1 in every container), so
@@ -37,8 +38,20 @@ call any of them. On musl it produces the same 145 and the same 34 variants
 as on glibc, which is a stronger statement than distribution-independence:
 the port is **libc-independent**, at least for what the example gate can see.
 
-Two limits on that, so it is not read as more than it is. Only gate A ran on
-Alpine — there is no C toolchain build there, so the C-versus-Rust comparison
+**A note on Debian 13, because it corrects the historical record.** The
+host-libm documentation listed it under "verified coverage: glibc 2.36
+through 2.41", but the gate was never run there — only
+`tools/glibc_sweep.sh`, which fingerprints the libm and found 2.41 matching
+2.39. That is weaker evidence than a gate run, and the distinction is the
+entire reason `gate_in_container.sh` exists: a fingerprint difference may or
+may not be output-observable, so a fingerprint *match* is a prediction, not a
+result. There is no `gate-debian-13.txt` in
+[`../linux-x86_64-glibc239/`](../linux-x86_64-glibc239/). Under the pure-Rust
+libm it has now actually been run, so glibc 2.41 is gate-verified for the
+current build even though it never was for the old one.
+
+Two limits on the above, so it is not read as more than it is. Only gate A
+ran on Alpine — there is no C toolchain build there, so the C-versus-Rust comparison
 and the libm differential were not repeated on musl. And this is x86-64
 throughout; nothing here says anything about arm64.
 
@@ -88,7 +101,7 @@ Reproduce:
 
 ```bash
 tools/verify_examples.sh all                                  # this host
-tools/gate_in_container.sh debian:12 fedora:41 archlinux:latest alpine:3.20
+tools/gate_in_container.sh debian:12 debian:13 fedora:41 archlinux:latest alpine:3.20
 ```
 
 `gate_in_container.sh` takes docker or podman, and copies the workspace into
