@@ -2,47 +2,67 @@
 
 A line-by-line translation of [SUNDIALS](https://github.com/LLNL/sundials)
 7.8.0 into safe Rust. **No `unsafe`, no FFI, no external crates, no build
-warnings.** Acceptance is byte-identical printed output against the upstream C
-reference examples — **established on Linux running on Intel/AMD x86-64 with
-glibc.**
+warnings** — and **no host C library on the numerical path**: every
+elementary function, and the sparse direct solver, is implemented here in
+pure Rust.
+
+Acceptance is byte-identical printed output against the upstream C examples,
+**established on Linux running on Intel/AMD x86-64 with glibc.**
 
 ## Platform scope: Linux on x86-64, glibc
 
-> Every numerical result in this repository was measured on **Ubuntu 24.04
-> x86-64, glibc 2.39, gcc 13.3.0, rustc 1.93.1**, on a CPU with FMA. The
-> gate was then **re-run natively on Debian 12 (glibc 2.36), Fedora 41
-> (glibc 2.40) and Arch (glibc 2.44)** — see
-> [Distribution coverage](#distribution-coverage-measured-not-argued), which
-> reports the one distribution where three variants differ and why. The
-> claim does not extend to musl, to arm64, or to Windows.
+> The `.out` reference gate was measured on **Ubuntu 24.04 x86-64, glibc
+> 2.39, gcc 13.3.0, rustc 1.93.1**, on a CPU with FMA, and **re-run natively
+> on Debian 12 (glibc 2.36), Fedora 41 (glibc 2.40) and Arch (glibc 2.44)** —
+> see [Distribution coverage](#distribution-coverage--measured-not-argued),
+> which reports the one distribution where three variants differ and why. The
+> C-versus-Rust measurement in
+> [`evidence/ubuntu-2604-glibc243/`](evidence/ubuntu-2604-glibc243/) is a
+> second, later run on **Ubuntu 26.04, glibc 2.43, gcc 15.2.0, rustc 1.96.1**.
+> Neither claim extends to musl, to arm64, or to Windows.
 >
-> This is the *good* platform for this port, and the reason is worth stating
-> plainly: the upstream reference `.out` files were generated on a glibc host.
-> The library and the examples evaluate `sin`, `cos`, `asin`, `acos`, `atan`,
-> `sinh`, `cosh`, `acosh`, `exp` and `ln` through `f64` methods that Rust
-> `std` documents as having *unspecified precision* and forwards to the host
-> libm — so on glibc those calls land on exactly the implementation the
-> references came from. The sibling
+> **What is still platform-bound, and what no longer is.** This used to be a
+> glibc-shaped port: the library evaluated `sin`, `cos`, `exp`, `ln` and the
+> rest through `f64` methods that Rust `std` documents as having *unspecified
+> precision*, which forward to whatever libm the binary links. On glibc those
+> calls landed on the very implementation the upstream `.out` files came from,
+> which is why this was the *good* platform — and why the sibling
 > [macOS/Apple-Silicon port](https://github.com/once-ere/SUNDIALS_7_8_Rust_port_for_AppleSilicon_macos)
-> had to document 52 variants away as Apple-libm divergence; **26 of those are
-> byte-identical here.**
+> had to document 52 variants away as Apple-libm divergence while **26 of
+> those are byte-identical here.**
+>
+> That dependence is gone. All thirteen functions now resolve to
+> [`sundials_libm.rs`](crates/sundials_core/src/sundials_libm.rs), so **the
+> Rust output is a function of this repository's own source**, not of the
+> host's patch level. What remains platform-bound is the *comparison*: the
+> shipped `.out` files, and the C binaries built here to check against. The
+> port runs the same everywhere; the references do not.
 
 ## Headline facts
 
 * 7 crates: `sundials_core` plus `cvode_rs`, `cvodes_rs`, `kinsol_rs`,
   `ida_rs`, `idas_rs`, `arkode_rs`. Solver crates depend on the core, never on
   each other.
-* 141 modules, one per upstream C file, keeping the exact C function names,
-  constants and return-flag conventions (`CV_SUCCESS = 0`; negative fatal,
-  positive recoverable).
-* Serial only. No MPI, GPU, KLU, SuperLU, LAPACK, Fortran or XBraid backends.
+* 144 modules, one per upstream C file, and 119 examples, keeping the exact C
+  function names, constants and return-flag conventions (`CV_SUCCESS = 0`;
+  negative fatal, positive recoverable).
+* Serial only. No MPI, GPU, SuperLU, LAPACK, Fortran or XBraid backends —
+  **KLU is no longer on that list**, see below.
 * `cargo build --workspace` → **zero warnings**. `cargo test --workspace
-  --lib` → **25 passed**.
+  --lib` → **39 passed**.
+* Thirteen elementary functions in pure Rust. Ten are **correctly rounded
+  (0.5000 ulp)** against a 113-bit `__float128` reference, where the host
+  glibc 2.43 reaches 0.5042 – 1.7848 ulp; `exp`, `log` and `acosh` are
+  bit-identical to it. See [`LIBM.md`](LIBM.md).
 * Deterministic `pow` vs the **native glibc `pow`**: **0 mismatches over
   5,900,000 domain inputs and 0 over 20,000,000 unrestricted finite inputs.**
-* Example gate: of the 199 reference `(example, argv)` variants,
-  **153 are byte-identical, 26 are reference-side divergences (0 port
-  defects), and 20 are excluded as KLU/SuperLU**. All six solver crates swept.
+* Two gates, both over the same 199 `(example, argv)` variants — see
+  [Two gates](#two-gates-and-why-both):
+  * **vs the shipped `.out` references:** 153 identical, 26 reference-side,
+    20 excluded, **0 port defects**.
+  * **vs the upstream C rebuilt on the same machine:** 175 of 190 comparable
+    identical; the 15 that differ decompose exactly into 8 libm + 7 sparse LU
+    with **0 unaccounted for**.
 
 ## Quick start
 
@@ -56,23 +76,25 @@ tools/pow_differential.sh all
 use cvode_rs::prelude::*;
 ```
 
-The example gate additionally needs the read-only upstream SUNDIALS 7.8.0 C
-tree as this workspace's **parent** directory — it reads
-`../examples/<solver>/<serial dir>/*.out`:
+The upstream example tree is **vendored** under `examples/`, so the reference
+gate needs nothing else (it still falls back to a parent-directory tree if one
+is there):
 
 ```bash
-tools/verify_examples.sh all
+tools/verify_examples.sh all      # vs the shipped .out references
+python3 tools/cross_gate.py       # both gates, cross-tabulated
 ```
 
 ## Relationship to the macOS port
 
-**This repository reuses the macOS port's crate tree wholesale.** All 141
-modules were translated from the C sources there; not one line of solver code
-was re-derived here, and `ARCHITECTURE.md` and `PROGRESS.md` are inherited
-unchanged because they describe the translation, which is
-platform-independent. What is new is the target-platform work: a native
+**This repository reuses the macOS port's crate tree wholesale.** The solver
+translation was not re-derived here, and `ARCHITECTURE.md` and `PROGRESS.md`
+are inherited unchanged because they describe the translation, which is
+platform-independent. What is new is the target-platform work — a native
 x86-64 `pow` oracle and differential, a re-run of the whole verification gate
-under glibc, and documentation scoped to Linux.
+under glibc, documentation scoped to Linux — and then the two substitutions
+that removed the host C library from the numerical path entirely, which grew
+the tree to 144 modules and 119 examples.
 
 ## The `pow` question
 
@@ -105,12 +127,83 @@ raised. No new `pow` source was written, because writing one would have
 replaced a routine already bit-exact against the target with an unmeasured
 rewrite.
 
-`pow` is the only *libm* substitution, but not the only host-C-library one:
+`pow` was the *first* libm substitution and for a long time the only one.
+It is now one of thirteen — see [The pure-Rust libm](#the-pure-rust-libm) —
+and it remains the one with the strongest claim, because it is measured
+bit-for-bit against the host rather than against a 113-bit reference.
+
+Not every host-C-library dependence was a libm one:
 `ark_analytic_lsrk_domeigest`, `ark_brusselator_lsrk_domeigest` and
 `ark_brusselator_lsrk_externaldomeigest` reproduce the BSD/glibc `rand()`
 TYPE_3 additive-feedback generator in Rust, sequence for sequence, because
 those examples feed pseudo-random vectors into a dominant-eigenvalue estimator
 and the draws are output-observable. See [`NOTICE`](NOTICE).
+
+## The pure-Rust libm
+
+[`crates/sundials_core/src/sundials_libm.rs`](crates/sundials_core/src/sundials_libm.rs)
+implements `exp`, `log`, `pow`, `expm1`, `log1p`, `sin`, `cos`, `atan`,
+`asin`, `acos`, `sinh`, `cosh` and `acosh`. `exp`/`log`/`pow` are the ARM
+optimized-routines kernels taken via musl (MIT) — the same source glibc ≥ 2.28
+ships. The other ten are written here, on a double-double core and an exact
+Payne–Hanek argument reduction over the bits of 2/π; their constant tables are
+generated by `tools/gen_libm_constants.py` from Python's stdlib `decimal`, so
+they are reproducible rather than pasted.
+
+Call sites are spelled `x.sun_sin()`, `x.sun_exp()`, … through a `SunMath`
+trait. That rename is what makes the host unreachable: Rust resolves inherent
+methods before trait ones, so `x.sin()` could not have been redirected. The
+only `f64` methods left anywhere in `crates/` are `sqrt`, `mul_add`, `abs`,
+`ceil`, `round` and `copysign`, all IEEE-754 exact.
+
+`tools/libm_differential.sh` measures each function against a 113-bit
+`__float128` reference over 1,000,000 samples per corpus:
+
+| function | pure Rust | host glibc 2.43 |
+|---|---:|---:|
+| `exp`, `log` | 0.5003 – 0.5071 ulp | identical, bit for bit (same source) |
+| `acosh` | 0.5000 ulp | 0.5000 ulp (independent, both correctly rounded) |
+| `sin`, `cos`, `atan`, `asin`, `acos` | **0.5000 ulp** | 0.5042 – 0.5186 ulp |
+| `expm1`, `log1p` | **0.5000 ulp** | 0.7783 – 0.8414 ulp |
+| `sinh`, `cosh` | **0.5000 ulp** | 0.9883 – 1.7848 ulp |
+
+0.5000 ulp is correct rounding. Where the two disagree, the pure-Rust answer
+is the right one. **These functions are deliberately not bit-identical to
+glibc and cannot be**: glibc implements them with the LGPL IBM Accurate
+Mathematical Library. The alternative was an fdlibm clone at ~0.55 ulp, which
+would have disagreed with glibc *more often*.
+
+A `host-libm` cargo feature (default off) switches the thirteen methods back
+to the host. It exists for `tools/ab_host_libm.sh`, and it is what keeps
+"0 port defects" a measurement rather than a claim. Never enable it for a
+production build.
+
+## The sparse LU that replaced KLU
+
+SuiteSparse KLU is LGPL-2.1+, so it could not be translated into this
+BSD-3-Clause tree and could not be called either, since the port forbids FFI.
+That is why the eleven `*_klu` examples were unportable.
+[`sundials_sparse_lu.rs`](crates/sundials_core/src/sundials_sparse_lu.rs)
+replaces it: a left-looking sparse LU (Gilbert & Peierls, SIAM J. Sci. Stat.
+Comput. 9(5), 1988) under a faithful translation of SUNDIALS' own BSD-3
+`sunlinsol_klu.c`. Nothing is derived from KLU, CSparse or any SuiteSparse
+source. **All 11 `*_klu` examples are ported; 4 are byte-identical to the C.**
+
+It pivots the way KLU documents its default — threshold partial pivoting with
+a diagonal preference at `tol = 0.001` — and that was not a stylistic choice.
+`idaHeat2D_klu`'s boundary equations are literally `e_i`, a unit diagonal and
+nothing else; largest-magnitude pivoting discards that `1` for a neighbouring
+`-1/dx²`, mixes the boundary and interior unknowns, and lets round-off into
+components the problem pins exactly. The run diverged where the C decays to
+zero. Matching KLU's rule fixed it and made two further variants
+byte-identical.
+
+Unlike the libm, this substitution has **no control build** — there is no KLU
+to switch back to. It is verified directly instead: against dense Gaussian
+elimination on 300 random sparse systems (worst relative residual 7.3e-16),
+and, for `idaHeat2D_klu`, its hand-packed CSC Jacobian checked entry by entry
+against an independent reference and against finite differences of the
+residual (`cargo test -p ida_rs --example idaHeat2D_klu`).
 
 ## Verification results
 
@@ -153,6 +246,52 @@ have real content differences, all reference-side and each root-caused in
 five trailing-whitespace-stripped references (`cvsKrylovDemo_ls` ×4,
 `idasAkzoNob_ASAi_dns`), and two references missing a final blank line the
 source prints unconditionally.
+
+## Two gates, and why both
+
+The section above is one gate. There is a second, and they are easy to
+confuse because both cover the same 199 `(example, argv)` variants and both
+report a count of byte-identical outputs — 153 and 175. **175 is not a
+correction of 153.** They compare Rust against different things:
+
+| | **vs the shipped `.out`** | **vs C rebuilt here** |
+|---|---|---|
+| reference | the files inside SUNDIALS 7.8.0 | the upstream C compiled from source, minutes apart |
+| machine | Ubuntu 24.04, glibc 2.39, host libm | Ubuntu 26.04, glibc 2.43, pure-Rust libm |
+| KLU examples | 20 excluded with SuperLU | 11 ported and compared, 9 SuperLU still out |
+| identical | **153** of 199 | **175** of 199 |
+| where | [`VERIFICATION.md`](VERIFICATION.md), [`evidence/linux-x86_64-glibc239/`](evidence/linux-x86_64-glibc239/) | [`evidence/ubuntu-2604-glibc243/`](evidence/ubuntu-2604-glibc243/) |
+
+The first asks whether the port reproduces the *published* reference —
+external, unfakeable, and it charges the port for a decade of libm drift. The
+second asks whether the translation agrees with the C it was translated from,
+machine held fixed — it cannot be blamed for reference drift, but its
+reference is one this project built. Neither supersedes the other.
+
+```bash
+python3 tools/cross_gate.py
+```
+
+asserts the variant sets are equal and prints the cross-tabulation. Three
+things fall out that neither gate shows alone:
+
+1. **All 26** variants that differ from the shipped `.out` are byte-identical
+   to pristine C rebuilt here — "0 port defects" reproduced on a second
+   distribution, glibc, compiler and rustc, against a reference *built* rather
+   than downloaded.
+2. The 15 divergences in the second gate **decompose exactly**: 8 to the libm
+   (the `host-libm` control build restores every one), 7 to the sparse LU
+   (all `*_klu`, no control build possible), **0 unaccounted for**.
+3. The 8 the control build names are *precisely* the 8 that flipped from
+   IDENTICAL under the first gate. Two experiments sharing nothing but the
+   source tree single out the same set — which is what turns the libm
+   attribution from an explanation into a measurement.
+
+The raw captures for the second gate — every `.stdout`, `.stderr`, `.meta`
+and SHA-256, plus a unified diff for each divergent variant — are vendored in
+[`evidence/ubuntu-2604-glibc243/`](evidence/ubuntu-2604-glibc243/). The
+pipeline was re-run from source afterwards and every capture in the compared
+set came back byte-identical.
 
 ## Distribution coverage — measured, not argued
 
@@ -205,9 +344,12 @@ result is toolchain-stable as well as distribution-stable.)
 On **Arch (glibc 2.44)** exactly three more variants diverge —
 `ark_analytic_lsrk_domeigest` (both argv variants) and
 `ark_analytic_lsrk_varjac`. This was predicted before the gate was run and
-then confirmed by it: `sinh`, `cosh` and `acosh` are called from exactly one
-place in the library, [`arkode_lsrkstep.rs:87`](crates/arkode_rs/src/arkode_lsrkstep.rs:87),
-and glibc 2.44 changed all three. Everything else — including the other
+then confirmed by it: `sinh`, `cosh` and `acosh` are reached from exactly one
+module in the library — the wrappers are defined at
+[`arkode_lsrkstep.rs:83-98`](crates/arkode_rs/src/arkode_lsrkstep.rs:83) and
+used from two sites in that same file — and glibc 2.44 changed all three.
+(Under the pure-Rust libm this no longer moves with the host at all; the
+Arch result describes the host-libm behaviour these variants used to have.) Everything else — including the other
 three LSRK variants — is unaffected. This is a libm-version effect, not a
 port defect; running the port on Arch is fine, but three reference outputs
 will not reproduce byte-for-byte there.
@@ -226,7 +368,9 @@ that one does not matter, because the port does not use the host `pow`.)
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | handle model, locked porting patterns, numbered deviation classes (inherited) |
 | [`VERIFICATION.md`](VERIFICATION.md) | per-variant matrix; Linux results at the top, inherited macOS evidence below |
 | [`PROGRESS.md`](PROGRESS.md) | per-file port status (inherited) |
+| [`LIBM.md`](LIBM.md) | the thirteen pure-Rust elementary functions: algorithms, provenance, measured accuracy |
 | [`POW_FMA_EXACTNESS.md`](POW_FMA_EXACTNESS.md) | how far the deterministic `pow` is bit-exact, and on which host that was measured |
+| [`evidence/ubuntu-2604-glibc243/`](evidence/ubuntu-2604-glibc243/) | the C-versus-Rust measurement in full: raw captures, per-variant diffs, and the attribution experiment |
 | [`CLAUDE.md`](CLAUDE.md) | workspace rules for future work in this repo |
 
 ## Licence
@@ -235,10 +379,17 @@ Derivative work of SUNDIALS, **BSD-3-Clause**, Copyright © 2002–2026 Lawrence
 Livermore National Security, Southern Methodist University, University of
 Maryland Baltimore County and the SUNDIALS contributors.
 
-The deterministic `pow` in `crates/sundials_core/src/sundials_math.rs` is a
-pure-Rust port of the ARM optimized-routines `pow` (via musl's
-`src/math/pow.c`, `pow_data.c` and `exp_data.c`), **MIT**, Copyright © 2018
-Arm Limited — the algorithm glibc ≥ 2.28 ships on this platform.
+`exp`, `log` and `pow` — in `crates/sundials_core/src/sundials_libm.rs`, and
+the deterministic `pow` in `sundials_math.rs` — are pure-Rust ports of the ARM
+optimized-routines kernels taken via musl's `src/math/`, **MIT**, Copyright ©
+2018 Arm Limited; that is the algorithm glibc ≥ 2.28 ships on this platform.
+The double-double core and the ten routines built on it are original to this
+project.
+
+`sundials_sparse_lu.rs` is an independent implementation of the Gilbert–
+Peierls algorithm from the published literature, wired up through a faithful
+translation of SUNDIALS' own BSD-3-Clause `sunlinsol_klu.c`. **No SuiteSparse
+code — KLU, BTF, AMD or CSparse — was read, copied or derived from.**
 
 Not an LLNL product; not endorsed by the SUNDIALS project. See `sundials.md`
 §8 and `NOTICE`.
