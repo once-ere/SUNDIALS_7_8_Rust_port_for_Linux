@@ -1,24 +1,27 @@
 #!/usr/bin/env bash
 # vendor_evidence.sh — copy a measurement run from the working repository
-# that produced it into this one, under evidence/<host-slug>/.
+# that produced it into this one, at the repository root.
 #
-#     tools/vendor_evidence.sh <source-repo> <host-slug>
-#     tools/vendor_evidence.sh ../SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu ubuntu-2604-glibc243
+#     tools/vendor_evidence.sh <source-repo>
+#     tools/vendor_evidence.sh ../SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu
 #
 # The C-vs-Rust pipeline (c_build.sh, c_examples_run.sh, rust_examples_run.sh,
 # compare_results.py, make_reports.py) writes c-results/, rust-results/ and
-# differences/ at the root of whatever repository it runs in. Those are one
-# machine's numbers, so they are filed here under the host that produced them
-# rather than at the root, alongside evidence/linux-x86_64-glibc239/.
+# differences/ at the root of whatever repository it runs in, and they land at
+# the root here too. That keeps every relative link inside them correct with no
+# rewriting -- ../requirements.md, ../LIBM.md and ../tools/... all resolve at
+# this depth -- and it is why the copy is a straight rsync.
 #
-# Moving them down two directory levels breaks the relative links that pointed
-# at the source repository's root, so those are rewritten. Nothing else is
-# touched: .stdout, .stderr, .meta and the .tsv indexes are copied byte for
-# byte, and the script fails if any of them changes.
+# The host these numbers belong to is recorded in the provenance table of each
+# directory's README.md, not in a path. (evidence/linux-x86_64-glibc239/ still
+# uses a host slug; that is the older .out-reference gate, a different
+# measurement kept separate on purpose.)
+#
+# Nothing is transformed: .stdout, .stderr, .meta and the .tsv indexes are
+# copied byte for byte, and the script fails if any link dangles afterwards.
 set -euo pipefail
 
-SRC=${1:?usage: vendor_evidence.sh <source-repo> <host-slug>}
-SLUG=${2:?usage: vendor_evidence.sh <source-repo> <host-slug>}
+SRC=${1:?usage: vendor_evidence.sh <source-repo>}
 # CDPATH= is not optional: with CDPATH set in the invoking shell -- and it is
 # set in at least one shell this was run from -- `cd` echoes the directory it
 # landed in, so $(cd ... && pwd) captures that echo *and* pwd, giving a
@@ -26,7 +29,7 @@ SLUG=${2:?usage: vendor_evidence.sh <source-repo> <host-slug>}
 # happily creates the resulting directory, and the real destination is never
 # written. `--` guards a path that begins with a dash.
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-DEST="$ROOT/evidence/$SLUG"
+DEST="$ROOT"
 
 case $ROOT in
   *[$'\n\t']* | "") echo "refusing to run: \$ROOT is not a single clean path" >&2; exit 1 ;;
@@ -55,36 +58,10 @@ for l in c_build.log libm_differential.log; do
   [ -f "$SRC/logs/$l" ] && cp "$SRC/logs/$l" "$DEST/logs/$l"
 done
 
-# The three README.md files and ATTRIBUTION.md sit at evidence/<slug>/<dir>/,
-# so a link written as ../X when they lived at the source root now has to
-# reach up three levels. requirements.md is excluded — it was just vendored
-# one level up, which is exactly where ../ points.
-python3 - "$DEST" <<'PY'
-import pathlib
-import re
-import sys
-
-dest = pathlib.Path(sys.argv[1])
-# ../requirements.md and ../logs/* are vendored one level up, which is
-# exactly where ../ points from the three result directories.
-KEEP_PREFIXES = ("../requirements.md", "../logs/")
-changed = 0
-for md in list(dest.glob("*/README.md")) + list(dest.glob("*/ATTRIBUTION.md")):
-    text = md.read_text()
-
-    def fix(m):
-        global changed
-        target = m.group(1)
-        if target.startswith(KEEP_PREFIXES) or not target.startswith("../") or target.startswith("../../"):
-            return m.group(0)
-        changed += 1
-        return "](../../../" + target[3:] + ")"
-
-    new = re.sub(r"\]\((\.\./[^)]+)\)", fix, text)
-    if new != text:
-        md.write_text(new)
-print(f"rewrote {changed} root-relative link(s) for the new depth")
-PY
+# No link rewriting is needed: the result directories sit at the same depth
+# here as in the source repository, so ../requirements.md, ../LIBM.md and
+# ../tools/... resolve unchanged. That is the whole reason for putting them at
+# the root rather than under a host slug.
 
 # Every link must resolve from where the file now lives; a vendored evidence
 # tree with dangling references is worse than none, because it looks checked.
@@ -94,9 +71,19 @@ import re
 import sys
 
 dest = pathlib.Path(sys.argv[1])
-root = dest.parent.parent
+root = dest
+# Only the vendored trees: dest is the repository root now, so rglob over all
+# of it would drag in README.md, crates/ and evidence/ as well.
+targets = sorted(
+    p
+    for d in ("c-results", "rust-results", "differences")
+    for p in (dest / d).rglob("*.md")
+)
+targets.append(dest / "requirements.md")
 ok = bad = 0
-for md in sorted(dest.rglob("*.md")):
+for md in targets:
+    if not md.exists():
+        continue
     for _text, target in re.findall(r"\[([^\]]*)\]\(([^)]+)\)", md.read_text()):
         if target.startswith(("http://", "https://", "#")):
             continue
@@ -110,4 +97,4 @@ print(f"{ok} links resolve, {bad} broken")
 sys.exit(1 if bad else 0)
 PY
 
-echo "vendored $(find "$DEST" -type f | wc -l) files into evidence/$SLUG"
+echo "vendored $(find "$DEST"/c-results "$DEST"/rust-results "$DEST"/differences -type f | wc -l) files into the repository root"

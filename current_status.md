@@ -23,7 +23,9 @@ Two hosts are involved, and every figure above belongs to one of them:
 * **gate B**, the libm differential and everything after it — Ubuntu 26.04
   x86-64, glibc 2.43, gcc 15.2.0, rustc 1.96.1, 24 cores, **bare metal**
   (`systemd-detect-virt` → `none`). Artefacts:
-  [`evidence/ubuntu-2604-glibc243/`](evidence/ubuntu-2604-glibc243/).
+  [`c-results/`](c-results/), [`rust-results/`](rust-results/),
+  [`differences/`](differences/) and [`requirements.md`](requirements.md), at
+  the repository root.
 
 > ### Published
 >
@@ -258,9 +260,10 @@ outside the compared set moved — five OpenMP examples, whose numbers genuinely
 differ run to run, and one MPI example whose lines merely come back in a
 different order with every number identical.
 
-Everything is under
-[`evidence/ubuntu-2604-glibc243/`](evidence/ubuntu-2604-glibc243/), raw
-captures included, produced by the pipeline in the sibling working repository
+Everything is at the repository root — [`c-results/`](c-results/),
+[`rust-results/`](rust-results/), [`differences/`](differences/) and
+[`requirements.md`](requirements.md) — raw captures included, produced by the
+pipeline in the sibling working repository
 [`SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu`](https://github.com/once-ere/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu)
 and vendored here by `tools/vendor_evidence.sh`.
 

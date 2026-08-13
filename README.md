@@ -17,7 +17,8 @@ Acceptance is byte-identical printed output against the upstream C examples,
 > see [Distribution coverage](#distribution-coverage--measured-not-argued),
 > which reports the one distribution where three variants differ and why. The
 > C-versus-Rust measurement in
-> [`evidence/ubuntu-2604-glibc243/`](evidence/ubuntu-2604-glibc243/) is a
+> [`differences/`](differences/) (with [`c-results/`](c-results/) and
+> [`rust-results/`](rust-results/)) is a
 > second, later run on **Ubuntu 26.04, glibc 2.43, gcc 15.2.0, rustc 1.96.1**.
 > Neither claim extends to musl, to arm64, or to Windows.
 >
@@ -260,7 +261,7 @@ correction of 153.** They compare Rust against different things:
 | machine | Ubuntu 24.04, glibc 2.39, host libm | Ubuntu 26.04, glibc 2.43, pure-Rust libm |
 | KLU examples | 20 excluded with SuperLU | 11 ported and compared, 9 SuperLU still out |
 | identical | **153** of 199 | **175** of 199 |
-| where | [`VERIFICATION.md`](VERIFICATION.md), [`evidence/linux-x86_64-glibc239/`](evidence/linux-x86_64-glibc239/) | [`evidence/ubuntu-2604-glibc243/`](evidence/ubuntu-2604-glibc243/) |
+| where | [`VERIFICATION.md`](VERIFICATION.md), [`evidence/linux-x86_64-glibc239/`](evidence/linux-x86_64-glibc239/) | [`differences/`](differences/), [`c-results/`](c-results/), [`rust-results/`](rust-results/) |
 
 The first asks whether the port reproduces the *published* reference —
 external, unfakeable, and it charges the port for a decade of libm drift. The
@@ -288,10 +289,12 @@ things fall out that neither gate shows alone:
    attribution from an explanation into a measurement.
 
 The raw captures for the second gate — every `.stdout`, `.stderr`, `.meta`
-and SHA-256, plus a unified diff for each divergent variant — are vendored in
-[`evidence/ubuntu-2604-glibc243/`](evidence/ubuntu-2604-glibc243/). The
-pipeline was re-run from source afterwards and every capture in the compared
-set came back byte-identical.
+and SHA-256, plus a unified diff for each divergent variant — live at the
+repository root in [`c-results/`](c-results/), [`rust-results/`](rust-results/)
+and [`differences/`](differences/), with
+[`requirements.md`](requirements.md) recording which optional C backends the
+machine could reach. The pipeline was re-run from source afterwards and every
+capture in the compared set came back byte-identical.
 
 ## Distribution coverage — measured, not argued
 
@@ -370,7 +373,10 @@ that one does not matter, because the port does not use the host `pow`.)
 | [`PROGRESS.md`](PROGRESS.md) | per-file port status (inherited) |
 | [`LIBM.md`](LIBM.md) | the thirteen pure-Rust elementary functions: algorithms, provenance, measured accuracy |
 | [`POW_FMA_EXACTNESS.md`](POW_FMA_EXACTNESS.md) | how far the deterministic `pow` is bit-exact, and on which host that was measured |
-| [`evidence/ubuntu-2604-glibc243/`](evidence/ubuntu-2604-glibc243/) | the C-versus-Rust measurement in full: raw captures, per-variant diffs, and the attribution experiment |
+| [`c-results/`](c-results/) | every upstream C example built and run on the gate-B host, with raw captures and SHA-256 |
+| [`rust-results/`](rust-results/) | every ported Rust example, same layout |
+| [`differences/`](differences/) | the comparison, variant by variant, plus [`ATTRIBUTION.md`](differences/ATTRIBUTION.md) — the experiment behind "0 port defects" |
+| [`requirements.md`](requirements.md) | which optional C backends the gate-B machine had, which it could not use, and why |
 | [`CLAUDE.md`](CLAUDE.md) | workspace rules for future work in this repo |
 
 ## Licence

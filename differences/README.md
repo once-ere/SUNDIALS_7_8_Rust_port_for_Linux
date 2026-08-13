@@ -6,7 +6,7 @@ executed twice on this machine: once as the upstream C binary
 directory is the comparison of the two stdout streams. A further 9 variants ran on **neither** side and are listed as `NOT_PORTED`;
 they are not a comparison that failed, they are a comparison that does
 not exist. Nothing here is asserted — every classification is computed by
-[`../tools/compare_results.py`](../../../tools/compare_results.py) from the
+[`../tools/compare_results.py`](../tools/compare_results.py) from the
 captured bytes.
 
 ## Provenance

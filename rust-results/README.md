@@ -80,7 +80,7 @@ elementary function. `exp`, `log`, `pow`, `expm1`, `log1p`, `sin`,
 `cos`, `atan`, `asin`, `acos`, `sinh`, `cosh` and `acosh` are all
 implemented in `crates/sundials_core/src/sundials_libm.rs`, so the
 numbers below do not move when the host glibc moves. See
-[`../LIBM.md`](../../../LIBM.md).
+[`../LIBM.md`](../LIBM.md).
 
 ## Layout of this directory
 

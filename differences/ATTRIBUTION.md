@@ -57,8 +57,8 @@ licensing reason, and each shows up in a different set of variants:
 
 | substitution | why | isolated by |
 |---|---|---|
-| host libm → [`sundials_libm`](../../../crates/sundials_core/src/sundials_libm.rs) | glibc's `sin`/`cos`/`atan`/`asin`/`acos` are LGPL | `--features host-libm` |
-| SuiteSparse KLU → [`sundials_sparse_lu`](../../../crates/sundials_core/src/sundials_sparse_lu.rs) | KLU is LGPL, and FFI is forbidden | only affects the 11 `*_klu` examples |
+| host libm → [`sundials_libm`](../crates/sundials_core/src/sundials_libm.rs) | glibc's `sin`/`cos`/`atan`/`asin`/`acos` are LGPL | `--features host-libm` |
+| SuiteSparse KLU → [`sundials_sparse_lu`](../crates/sundials_core/src/sundials_sparse_lu.rs) | KLU is LGPL, and FFI is forbidden | only affects the 11 `*_klu` examples |
 
 There is no `host-klu` control build, because there is nothing to switch
 to: KLU cannot be linked at all under this port's rules. What stands in for
@@ -114,10 +114,10 @@ The ARKODE **LSRK** entries are not a coincidence and were predictable.
 `sinh`, `cosh`, `acosh` and `ln` are reached from exactly one module in the
 whole library: the wrappers `SUNRsinh`, `SUNRcosh`, `SUNRacosh` and
 `SUNRlog` are *defined* at
-[`crates/arkode_rs/src/arkode_lsrkstep.rs:83-98`](../../../crates/arkode_rs/src/arkode_lsrkstep.rs:83)
+[`crates/arkode_rs/src/arkode_lsrkstep.rs:83-98`](../crates/arkode_rs/src/arkode_lsrkstep.rs:83)
 and *called* from two sites in that same file,
-[`:1158`](../../../crates/arkode_rs/src/arkode_lsrkstep.rs:1158) and
-[`:3255`](../../../crates/arkode_rs/src/arkode_lsrkstep.rs:3255). The first feeds
+[`:1158`](../crates/arkode_rs/src/arkode_lsrkstep.rs:1158) and
+[`:3255`](../crates/arkode_rs/src/arkode_lsrkstep.rs:3255). The first feeds
 the formula that chooses the *number of stages*: a last-bit difference there
 changes an integer, which changes the method, which changes everything
 downstream.
@@ -144,7 +144,7 @@ digit of one error estimate on one of 74 lines.
 
 The pure-Rust one, measurably. `tools/libm_differential.sh` measures every
 function against a 113-bit `__float128` reference (see
-[`../LIBM.md`](../../../LIBM.md)):
+[`../LIBM.md`](../LIBM.md)):
 
 Every figure below is read off [`../logs/libm_differential.log`](../logs/libm_differential.log),
 which records 1,000,000 samples per (function, corpus):
