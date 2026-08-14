@@ -18,7 +18,7 @@ than assuming it.
           Ubuntu 26.04, glibc 2.43, rustc 1.96.1, pure-Rust libm.
           `tools/c_build.sh && tools/c_examples_run.sh`,
           `tools/rust_examples_run.sh`, `tools/compare_results.py`
-          -> evidence/ubuntu-2604-glibc243/differences/index.tsv
+          -> differences/index.tsv
 
 They answer different questions. Gate A asks whether the port reproduces the
 *published* reference output. Gate B asks whether the port agrees with the C
@@ -41,8 +41,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 GATE_A = ROOT / "evidence" / "linux-x86_64-glibc239" / "summary.txt"
-GATE_B = ROOT / "evidence" / "ubuntu-2604-glibc243" / "differences" / "index.tsv"
-AB = ROOT / "evidence" / "ubuntu-2604-glibc243" / "differences" / "ab-host-libm.tsv"
+GATE_B = ROOT / "differences" / "index.tsv"
+AB = ROOT / "differences" / "ab-host-libm.tsv"
 
 # `<example>  [<argv>]  <class>` — argv may be empty, class may carry a detail
 # such as `DIFF(70 lines)` or `EXCLUDED excluded(klu)`.
