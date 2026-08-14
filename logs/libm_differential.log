@@ -34,17 +34,17 @@ test sundials_libm::tests::libm_differential_arm_lineage ... ok
   atan wide   n=1000000   rust==host 999680    (99.9680%)  max|err| rust 0.5000 ulp, host 0.5185 ulp
   sinh wide   n=1000000   rust==host 718427    (71.8427%)  max|err| rust 0.5000 ulp, host 1.7848 ulp
   asin domain n=1000000   rust==host 998454    (99.8454%)  max|err| rust 0.5000 ulp, host 0.5130 ulp
-  asin wide   n=1000000   rust==host 998385    (99.8385%)  max|err| rust 0.5000 ulp, host 0.5042 ulp
   cosh domain n=1000000   rust==host 992555    (99.2555%)  max|err| rust 0.5000 ulp, host 1.4610 ulp
+  asin wide   n=1000000   rust==host 998385    (99.8385%)  max|err| rust 0.5000 ulp, host 0.5042 ulp
   acos domain n=1000000   rust==host 999301    (99.9301%)  max|err| rust 0.5000 ulp, host 0.5186 ulp
   cosh wide   n=1000000   rust==host 888335    (88.8335%)  max|err| rust 0.5000 ulp, host 0.9883 ulp
+ acosh domain n=1000000   rust==host 1000000   (100.0000%)  max|err| rust 0.5000 ulp, host 0.5000 ulp
   acos wide   n=1000000   rust==host 997256    (99.7256%)  max|err| rust 0.5000 ulp, host 0.5072 ulp
 test sundials_libm::tests::libm_differential_correctly_rounded ... ok
- acosh domain n=1000000   rust==host 1000000   (100.0000%)  max|err| rust 0.5000 ulp, host 0.5000 ulp
  acosh wide   n=1000000   rust==host 1000000   (100.0000%)  max|err| rust 0.5000 ulp, host 0.5000 ulp
 test sundials_libm::tests::libm_differential_dd_derived ... ok
 
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 2.03s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 2.07s
 
 
 == end ==

@@ -6,5 +6,5 @@ launcher: mpirun --oversubscribe -np 4
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/kinsol/F2003_parallel/kin_diagon_kry_f2003
 exit:     0 (OK)
 seconds:  0.507
-stdout:   1965 bytes, sha256 407d0b24ec5e7822076d6d4dc74a1965c95c74bdffe9f9f93a72c89089c35e66
+stdout:   1965 bytes, sha256 ef3ae565e3dc8941badf52be920543fbab1e92bcdca20d8f71b5ceca8ac57ecd
 stderr:   762 bytes
