@@ -354,8 +354,9 @@ from exactly one module, the wrappers at `arkode_lsrkstep.rs:83-98` (used
 from `:1158` and `:3255`), and glibc 2.44 changed all three. A libm-version
 effect, not a port defect.
 
-**§2a removed the cause — and the measurement, now made on six hosts across
-two libcs, is more interesting than the prediction.**
+**§2a removed the cause — and the measurement, now made on seven hosts across
+two libcs and two CPU architectures, is more interesting than the
+prediction.**
 `tools/gate_in_container.sh debian:12 debian:13 fedora:41 archlinux:latest alpine:3.20`
 was run under the pure-Rust libm, alongside `tools/verify_examples.sh all` on
 this host:
@@ -368,8 +369,9 @@ this host:
 | Ubuntu 26.04 (this host) | glibc 2.43 | 1.96.1 | 145 / 34 / 20 |
 | Arch | glibc 2.44 | 1.97.1 | 145 / 34 / 20 |
 | Alpine 3.20.10 | **musl 1.2.5** | 1.97.1 | 145 / 34 / 20 |
+| Debian 13 on **aarch64** *(emulated)* | glibc 2.41 | 1.97.1 | 145 / 34 / 20 |
 
-Not merely the same tally: the *same 34 variants*, name for name. The six
+Not merely the same tally: the *same 34 variants*, name for name. The seven
 DIFF lists are byte-identical files, every one hashing to
 `6581e4918e5ab2c71ee6354f383a0f34` — `evidence/purerust-libm-gate/README.md`
 gives the recipe. Two rustc versions and two libcs are covered, so the result
@@ -403,7 +405,24 @@ port is libc-independent, not merely glibc-version-independent.
 Two limits, so this is not read as more than it is. Only the reference gate
 ran on Alpine — there is no C toolchain build there, so the C-versus-Rust
 comparison and the libm differential were not repeated on musl. And it is
-x86-64 throughout; arm64 remains untested.
+**arm64 is measured now, under emulation.** `tools/gate_in_container.sh
+--platform linux/arm64 debian:13` gives **145 / 34 / 20** with a DIFF list
+byte-identical to the same image on x86-64 — same 34 variants, same order,
+same digest. The log header records `aarch64 [EMULATED]`, because it ran under
+QEMU user-mode on this x86-64 host rather than on arm64 silicon.
+
+How far to trust that: QEMU implements `sqrt` and fused multiply-add to the
+IEEE-754 specification, which pins them exactly, and those plus integer
+arithmetic are what the pure-Rust libm is built on — so a faithful emulator
+and real hardware should agree, and the emulator agrees with x86-64. It cannot
+exclude a genuine aarch64 codegen difference reproduced identically by QEMU.
+Strong corroboration of architecture-independence; not a substitute for a run
+on an arm64 machine.
+
+Compilation for aarch64 is separately clean and needs no emulation:
+`cargo check --target aarch64-unknown-linux-{gnu,musl} --workspace
+--all-targets` gives 0 errors and 0 warnings across 7 crates and 119 example
+targets.
 
 ## 5. Open items
 

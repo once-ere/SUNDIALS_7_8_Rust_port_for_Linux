@@ -242,7 +242,7 @@ be usable as soon as CUDA is.
 | **SuperLU_MT** | not in the Ubuntu archive at any version; upstream ships source only | 10 `*_sps` / `*_slu` example programs cannot be built — the 9 in the serial directories plus `arkode/C_superlu-mt/ark_brusselator1D_FEM_slu`. The 9 serial ones are exactly the 9 variants the Rust port does not translate, so no comparison is lost. |
 | **Ginkgo, RAJA, XBraid, oneMKL** | not in the Ubuntu archive | 11 GPU / parallel-framework example programs cannot be built, across `cvode/ginkgo`, `cvode/raja`, `ida/raja`, `ida/mpiraja`, `arkode/CXX_xbraid`, `cvode/CXX_onemkl` and `cvode/CXX_sycl`. None has a serial Rust counterpart. |
 
-## 4a. Cross-architecture verification — blocked, one `apt` away
+## 4a. Cross-architecture verification — done, under emulation
 
 Every measurement in this repository is **x86-64**. The reference gate has
 been run on six hosts and two libcs (`evidence/purerust-libm-gate/` upstream),
@@ -256,7 +256,7 @@ Running it here needs user-mode emulation, which is not installed:
 
 | component | installed | candidate | what it unlocks |
 |---|---|---|---|
-| `qemu-user-binfmt` | **no** | 1:10.2.1+ds-1ubuntu3.2 | `podman run --platform linux/arm64`, hence `tools/gate_in_container.sh` on aarch64 |
+| `qemu-user-binfmt` | **now yes** | 1:10.2.1+ds-1ubuntu3.2 | `podman run --platform linux/arm64`, hence `tools/gate_in_container.sh` on aarch64 |
 | `qemu-user` | **no** | 1:10.2.1+ds-1ubuntu3.2 | pulled in as a dependency |
 | `binfmt-support` | **no** | 2.2.2-8 | registers the aarch64 handler |
 | `qemu-user-static` | **no** | _(none on Ubuntu 26.04)_ | the usual package elsewhere; use `qemu-user-binfmt` here |
@@ -267,7 +267,17 @@ sudo apt install qemu-user-binfmt
 tools/gate_in_container.sh --platform linux/arm64 debian:13
 ```
 
-**The tooling side is done and tested; only the package is missing.**
+**Resolved on 2026-08-14.** `qemu-user-binfmt 1:10.2.1+ds-1ubuntu3.2` is
+installed, `/proc/sys/fs/binfmt_misc/qemu-aarch64` is registered, and the gate
+has been run: **Debian 13 on aarch64 gives 145 / 34 / 20 with a DIFF list
+byte-identical to the same image on x86-64.** The log is
+`evidence/purerust-libm-gate/gate-debian-13-arm64.txt` upstream, headed
+`aarch64 [EMULATED]`. It is QEMU user-mode on an x86-64 host, not arm64
+silicon — see the caveat at the end of this section, which still applies.
+Separately, `cargo check --target aarch64-unknown-linux-{gnu,musl} --workspace
+--all-targets` is clean: 0 errors, 0 warnings, 7 crates, 119 example targets.
+
+The table below is kept as the record of what was missing.
 `gate_in_container.sh` takes `--platform` (or `$GATE_PLATFORM`), checks
 `/proc/sys/fs/binfmt_misc/qemu-<arch>` before pulling anything and prints the
 apt line if it is absent, tags the log with the architecture so an emulated

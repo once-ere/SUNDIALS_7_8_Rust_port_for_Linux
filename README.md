@@ -22,8 +22,8 @@ Acceptance is byte-identical printed output against the upstream C examples,
 > [`rust-results/`](rust-results/)) is a
 > second, later run on **Ubuntu 26.04, glibc 2.43, gcc 15.2.0, rustc 1.96.1**.
 > The reference gate has since been re-run under the pure-Rust libm on **four
-> glibc versions and on musl**, all giving the same result; **arm64 and
-> Windows remain untested.**
+> glibc versions, on musl, and on aarch64 under emulation**, all giving the
+> same result; **arm64 hardware and Windows remain untested.**
 >
 > **What is still platform-bound, and what no longer is.** This used to be a
 > glibc-shaped port: the library evaluated `sin`, `cos`, `exp`, `ln` and the
@@ -379,11 +379,12 @@ used from two sites in that same file — and glibc 2.44 changed all three.
 **This whole section describes host-libm behaviour, and the gate has since
 been re-run without it — on four hosts.** Under the pure-Rust libm, glibc
 **2.36 (Debian 12), 2.40 (Fedora 41), 2.41 (Debian 13), 2.43 (Ubuntu 26.04)
-and 2.44 (Arch)** plus **musl 1.2.5 (Alpine)** all score **145 / 34 / 20**,
-and not merely the same tally: the same 34 variants, name for name, with
-byte-identical DIFF lists — six hosts, two libcs. Arch is no longer an
-outlier because there is no outlier — the score no longer depends on the host.
-Two rustc versions are covered as well.
+and 2.44 (Arch)** plus **musl 1.2.5 (Alpine)** and **aarch64 under
+emulation** all score **145 / 34 / 20**, and not merely the same tally: the
+same 34 variants, name for name, with byte-identical DIFF lists — seven hosts,
+two libcs, two CPU architectures. Arch is no longer an outlier because there
+is no outlier — the score no longer depends on the host. Two rustc versions
+are covered as well.
 
 The cost is that 153 became 145 on all four: the eight variants that flipped
 are exactly the eight attributed to the libm, the three former Arch ones among
@@ -405,7 +406,24 @@ port is libc-independent, not merely glibc-version-independent.
 Two limits, so this is not read as more than it is. Only the reference gate
 ran on Alpine — there is no C toolchain build there, so the C-versus-Rust
 comparison and the libm differential were not repeated on musl. And it is
-x86-64 throughout; arm64 remains untested.
+**arm64 is measured now, under emulation.** `tools/gate_in_container.sh
+--platform linux/arm64 debian:13` gives **145 / 34 / 20** with a DIFF list
+byte-identical to the same image on x86-64 — same 34 variants, same order,
+same digest. The log header records `aarch64 [EMULATED]`, because it ran under
+QEMU user-mode on this x86-64 host rather than on arm64 silicon.
+
+How far to trust that: QEMU implements `sqrt` and fused multiply-add to the
+IEEE-754 specification, which pins them exactly, and those plus integer
+arithmetic are what the pure-Rust libm is built on — so a faithful emulator
+and real hardware should agree, and the emulator agrees with x86-64. It cannot
+exclude a genuine aarch64 codegen difference reproduced identically by QEMU.
+Strong corroboration of architecture-independence; not a substitute for a run
+on an arm64 machine.
+
+Compilation for aarch64 is separately clean and needs no emulation:
+`cargo check --target aarch64-unknown-linux-{gnu,musl} --workspace
+--all-targets` gives 0 errors and 0 warnings across 7 crates and 119 example
+targets.
 
 ## Documentation
 

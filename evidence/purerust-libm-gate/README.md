@@ -17,14 +17,16 @@ are that re-run.
 | **pure-Rust libm** | **Debian 13** | **2.41** | **1.97.1** | **145 / 34 / 20** |
 | **pure-Rust libm** | **Arch** | **2.44** | **1.97.1** | **145 / 34 / 20** |
 | **pure-Rust libm** | **Alpine 3.20.10** | **musl 1.2.5** | **1.97.1** | **145 / 34 / 20** |
+| **pure-Rust libm** | **Debian 13 on aarch64** *(emulated)* | **2.41** | **1.97.1** | **145 / 34 / 20** |
 
 Two results, and the second is the one that matters.
 
 **1. The host dependence is gone.** Under the host libm the score depended on
 which glibc you linked: 153 on 2.36 through 2.41, but 150 on Arch's 2.44,
 because that release changed `sinh`, `cosh` and `acosh`. Under the pure-Rust
-libm, **six hosts spanning glibc 2.36, 2.40, 2.41, 2.43, 2.44 and musl 1.2.5
-all report 145 / 34 / 20 — and the same 34 variants, name for name.** The DIFF
+libm, **seven hosts spanning glibc 2.36, 2.40, 2.41, 2.43, 2.44, musl 1.2.5
+and a second CPU architecture all report 145 / 34 / 20 — and the same 34
+variants, name for name.** The DIFF
 lists are byte-identical files. Arch is no longer an outlier; there is no
 outlier, because the score no longer depends on the host at all. Two rustc
 versions are covered too (1.96.1 on the host, 1.97.1 in every container), so
@@ -37,6 +39,27 @@ everything except `sqrt`. That reason is void now, because the port does not
 call any of them. On musl it produces the same 145 and the same 34 variants
 as on glibc, which is a stronger statement than distribution-independence:
 the port is **libc-independent**, at least for what the example gate can see.
+
+**The aarch64 row, and how far to trust it.** It is Debian 13 again, same
+glibc and rustc, run under QEMU user-mode emulation on this x86-64 host — the
+`--- aarch64 [EMULATED] / ... ---` header in `gate-debian-13-arm64.txt` says
+so, and the filename is architecture-tagged so it cannot be confused with the
+x86-64 run of the same image. Its DIFF list is byte-identical to that x86-64
+run: same 34 variants, same order, same digest.
+
+That is real evidence and it is not hardware. QEMU is not an aarch64 CPU. It
+implements `sqrt` and fused multiply-add to the IEEE-754 specification, which
+pins them exactly, and those plus integer arithmetic are what the pure-Rust
+libm is built on — so a faithful emulator and real silicon should agree here,
+and they do agree with x86-64. What it cannot exclude is a genuine aarch64
+code-generation difference that QEMU reproduces identically. Treat it as
+strong corroboration of architecture-independence, not as a substitute for a
+run on an arm64 machine.
+
+Compiling for aarch64 is separately clean, and needs no emulation at all:
+`cargo check --target aarch64-unknown-linux-gnu --workspace --all-targets`
+and the `-musl` equivalent both give **0 errors and 0 warnings** across all 7
+crates and all 119 example targets.
 
 **A note on Debian 13, because it corrects the historical record.** The
 host-libm documentation listed it under "verified coverage: glibc 2.36
@@ -51,7 +74,7 @@ libm it has now actually been run, so glibc 2.41 is gate-verified for the
 current build even though it never was for the old one.
 
 Two limits on the above, so it is not read as more than it is. Only gate A
-ran on Alpine — there is no C toolchain build there, so the C-versus-Rust comparison
+ran on Alpine and on aarch64 — there is no C toolchain build there, so the C-versus-Rust comparison
 and the libm differential were not repeated on musl. And this is x86-64
 throughout; nothing here says anything about arm64.
 
