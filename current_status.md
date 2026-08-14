@@ -11,7 +11,7 @@ Last updated 2026-08-12. Read this file first when resuming.
 | deterministic `pow` vs **native glibc `pow`**, SUNDIALS domain corpus | **5,900,000 inputs, 0 mismatches** |
 | deterministic `pow` vs **native glibc `pow`**, unrestricted corpus | **20,000,000 inputs, 0 mismatches** |
 | pure-Rust libm vs a 113-bit `__float128` reference | **ten routines correctly rounded (0.5000 ulp)**; host glibc 2.43 reaches 0.5042 – 1.7848 |
-| **gate A** — `tools/verify_examples.sh all`, vs the shipped `.out` references | **145 IDENTICAL / 34 reference-side / 20 excluded**, identical on six hosts spanning glibc 2.36–2.44 and musl (§4). Was 153 / 26 / 20 under the host libm |
+| **gate A** — `tools/verify_examples.sh all`, vs the shipped `.out` references | **145 IDENTICAL / 34 reference-side / 20 excluded**, identical on seven hosts spanning glibc 2.36–2.44, musl, and aarch64 under emulation (§4). Was 153 / 26 / 20 under the host libm |
 | port defects among those 26 | **0 — proven twice**, on two hosts and two glibc versions (§3) |
 | **gate B** — vs the upstream C rebuilt on the same machine | **175 of 190 comparable identical**; the 15 that differ are 8 libm + 7 sparse LU, **0 unaccounted for** (§3a) |
 
@@ -374,13 +374,19 @@ this host:
 Not merely the same tally: the *same 34 variants*, name for name. The seven
 DIFF lists are byte-identical files, every one hashing to
 `6581e4918e5ab2c71ee6354f383a0f34` — `evidence/purerust-libm-gate/README.md`
-gives the recipe. Two rustc versions and two libcs are covered, so the result
-is toolchain-stable and libc-stable, not just distribution-stable. The host
-dependence this section documents is gone — Arch is not an outlier any more
-because nothing is.
+gives the recipe. Two rustc versions, two libcs and two CPU architectures are
+covered, so the result is toolchain-stable, libc-stable and
+architecture-stable, not just distribution-stable. The host dependence this
+section documents is gone — Arch is not an outlier any more because nothing
+is.
+
+The aarch64 row is Debian 13 a second time, which is the point of choosing it:
+same image, same glibc 2.41, same rustc 1.97.1 as the x86-64 row above it, so
+the comparison isolates the CPU architecture and nothing else. The two DIFF
+lists are byte-identical.
 
 It did not restore the three variants, though, and it would be dishonest to
-imply otherwise. 153 became 145 on **all six hosts**, not just Arch. The
+imply otherwise. 153 became 145 on **all seven hosts**, not just Arch. The
 eight that flipped from IDENTICAL to DIFF are exactly the eight that
 `differences/ab-host-libm.tsv` attributes to the libm — zero other class
 changes — and the three Arch ones are inside that eight. The port stopped
@@ -457,9 +463,10 @@ Nothing blocks the port; these would strengthen the evidence.
    real and was accepted: `sundials_libm.rs` is now a maintained component,
    with `tools/libm_differential.sh` as its regression test.
 
-   That measurement has now been made on six hosts, and it refutes the
-   item's premise. Debian 12, Debian 13, Fedora 41, this host, Arch and
-   Alpine/musl all give **145 / 34 / 20 with the same 34 variants**,
+   That measurement has now been made on seven hosts, and it refutes the
+   item's premise. Debian 12, Debian 13, Fedora 41, this host, Arch,
+   Alpine/musl and Debian 13 on emulated aarch64 all give
+   **145 / 34 / 20 with the same 34 variants**,
    so byte-identity *across hosts* is achieved — but the three variants do
    **not** reproduce against the shipped `.out`. They cannot: the references
    came from glibc's routines and the port no longer computes what glibc
