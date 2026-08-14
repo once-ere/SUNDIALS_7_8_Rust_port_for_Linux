@@ -303,8 +303,24 @@ and SHA-256, plus a unified diff for each divergent variant — live at the
 repository root in [`c-results/`](c-results/), [`rust-results/`](rust-results/)
 and [`differences/`](differences/), with
 [`requirements.md`](requirements.md) recording which optional C backends the
-machine could reach. The pipeline was re-run from source afterwards and every
-capture in the compared set came back byte-identical.
+machine could reach. The pipeline has been re-run from source four times and
+every capture **in the compared set** came back byte-identical each time.
+
+Outside the compared set, three kinds of capture do move, and knowing which is
+the difference between reading a `git diff` and being alarmed by one:
+
+| what moves | why | in the compared set? |
+|---|---|---|
+| up to 6 `*_omp` `.stdout` | OpenMP reduction order changes the numbers themselves | no |
+| `kin_diagon_kry_f2003` `.stdout` | four MPI ranks interleave 47 identical lines differently | no |
+| 63 MPI `.stderr` | hwloc 2.13.0 mis-reads this CPU's hybrid core layout and every MPI example inherits the complaint | no |
+
+The last of those appeared between two otherwise identical runs and moved 63
+files at once, which looks far worse than it is.
+[`c-results/README.md`](c-results/README.md) derives the count from the
+captures and gives the check: none is in the compared set,
+[`tools/compare_results.py`](tools/compare_results.py) opens only `.stdout`,
+and all 337 runs still exit 0.
 
 ## Distribution coverage — measured, not argued
 
