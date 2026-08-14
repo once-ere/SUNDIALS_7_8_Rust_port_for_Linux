@@ -5,6 +5,6 @@ binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/
 argv:     
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/rust-run/cvodes/serial/cvsLotkaVolterra_ASA
 exit:     0 (OK)
-seconds:  0.106
+seconds:  0.105
 stdout:   405 bytes, sha256 44d47a6d5cd349cc345ce00c3452fa61fe8e109d063400fc0688833f524dc612
 stderr:   0 bytes

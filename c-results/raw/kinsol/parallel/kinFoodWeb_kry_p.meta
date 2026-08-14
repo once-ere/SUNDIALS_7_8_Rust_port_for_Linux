@@ -5,6 +5,6 @@ argv:
 launcher: mpirun --oversubscribe -np 4
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/kinsol/parallel/kinFoodWeb_kry_p
 exit:     0 (OK)
-seconds:  0.606
+seconds:  0.608
 stdout:   789 bytes, sha256 abd51ab2dd40a36a4cad79fbbb2ae755ded39b0ec5767bb05c74be2ba4a92f49
-stderr:   0 bytes
+stderr:   762 bytes

@@ -5,6 +5,6 @@ argv:
 launcher: mpirun --oversubscribe -np 4
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/idas/parallel/idasHeat2D_kry_bbd_p
 exit:     0 (OK)
-seconds:  0.507
+seconds:  0.606
 stdout:   3029 bytes, sha256 b5ca5fac4ed202f92373fc2a018df9a375a5c65ed1848ca2d18a801d9f2d1b89
-stderr:   0 bytes
+stderr:   762 bytes

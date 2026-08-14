@@ -5,6 +5,6 @@ binary:   /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/
 argv:     --m_aa 2 --orth_aa 2
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/rust-run/kinsol/serial/kinAnalytic_fp__--m_aa_2_--orth_aa_2
 exit:     0 (OK)
-seconds:  0.110
+seconds:  0.122
 stdout:   707 bytes, sha256 ede30554c343b27ff1c6b6fa59dca03eafb381691044147c42f49154dea2b35e
 stderr:   0 bytes

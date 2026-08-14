@@ -7,4 +7,4 @@ cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/
 exit:     0 (OK)
 seconds:  0.606
 stdout:   8871 bytes, sha256 d0a2535518958e17cf8671ce7b0eab0f8b2aedae3f3e4260df26d88cf80d0e38
-stderr:   0 bytes
+stderr:   762 bytes

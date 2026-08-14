@@ -5,6 +5,6 @@ argv:     4
 launcher: <direct>
 cwd:      /home/nsh/Developer/github/SUNDIALS_7_8_Rust_port_for_Linux_on_ubuntu/build/c-run/kinsol/C_openmp/kinFoodWeb_kry_omp__4
 exit:     0 (OK)
-seconds:  1.207
-stdout:   809 bytes, sha256 81e9fde1b1a73070543798db704f71300bc534c5ab1d4c524a5ae66d4904018f
+seconds:  1.107
+stdout:   809 bytes, sha256 0805ab16c44e42c7d9946439ab76802b377e05af404de683afac603e378bd4e1
 stderr:   0 bytes
