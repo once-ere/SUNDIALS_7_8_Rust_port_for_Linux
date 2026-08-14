@@ -388,6 +388,34 @@ def write_c(p):
         "It is recorded here because a reader is entitled to know which numbers",
         "in this directory are stable and which are not.",
         "",
+    ]
+    # stderr moves for reasons that have nothing to do with the port: the
+    # host's MPI stack can start complaining about its own CPU topology and
+    # every parallel example inherits the message. Counted rather than
+    # asserted, so the note disappears when the host stops doing it.
+    hw = [r for r in rows
+          if (C_DIR / "raw" / r["dir"] / (r["variant"] + ".stderr")).exists()
+          and "hwloc" in (C_DIR / "raw" / r["dir"] / (r["variant"] + ".stderr")).read_text(errors="replace")]
+    if hw:
+        doc += [
+            f"### `.stderr` moves too, and not because of the port",
+            "",
+            f"{len(hw)} of the {len(rows)} runs currently carry an **hwloc** topology",
+            "warning on stderr — all of them MPI examples, inheriting a complaint from",
+            "OpenMPI about how it reads this machine's CPU layout. It appeared between",
+            "two otherwise identical pipeline runs, so a `git diff` of the captures",
+            "shows dozens of moved `.stderr` files and no moved `.stdout`.",
+            "",
+            "Harmless, and checkably so: none is in the compared set,",
+            "[`../tools/compare_results.py`](../tools/compare_results.py) opens only",
+            "`.stdout`, and the runs still exit 0.",
+            "",
+            "```bash",
+            "grep -rl hwloc c-results/raw --include='*.stderr' | wc -l",
+            "```",
+        ]
+    doc += [
+        "",
         "## Per-solver tables (serial examples — these are the ones with a Rust counterpart)",
         "",
     ]
